@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/auth_provider.dart';
 import '../providers/movie_provider.dart';
 import '../providers/recommendation_provider.dart';
 import '../models/movie.dart';
@@ -188,7 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     end: Alignment.bottomCenter,
                     colors: [
                       Colors.transparent,
-                      Colors.black.withOpacity(0.9),
+                      Colors.black.withValues(alpha: 0.9),
                     ],
                   ),
                 ),

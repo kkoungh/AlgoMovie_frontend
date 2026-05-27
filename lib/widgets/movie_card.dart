@@ -107,7 +107,7 @@ class MovieCard extends StatelessWidget {
             begin: Alignment.bottomCenter,
             end: Alignment.topCenter,
             colors: [
-              Colors.black.withOpacity(0.85),
+              Colors.black.withValues(alpha: 0.85),
               Colors.transparent,
             ],
           ),
@@ -130,9 +130,9 @@ class MovieCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.25),
+          color: color.withValues(alpha: 0.25),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withOpacity(0.6)),
+          border: Border.all(color: color.withValues(alpha: 0.6)),
         ),
         child: Icon(icon, color: color, size: 16),
       ),

@@ -17,7 +17,6 @@ class MovieDetailScreen extends StatefulWidget {
 class _MovieDetailScreenState extends State<MovieDetailScreen> {
   Movie? _movie;
   List<Movie> _similar = [];
-  bool _loading = true;
   double _userRating = 0;
   final _reviewCtrl = TextEditingController();
   bool _ratingSubmitted = false;
@@ -40,7 +39,6 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       setState(() {
         _movie = detail ?? _movie;
         _similar = similar;
-        _loading = false;
       });
     }
   }
@@ -156,16 +154,16 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
               )
             else
               Container(color: const Color(0xFF2A2A2A)),
-            DecoratedBox(
+            const DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
                     Colors.transparent,
-                    const Color(0xFF121212),
+                    Color(0xFF121212),
                   ],
-                  stops: const [0.5, 1.0],
+                  stops: [0.5, 1.0],
                 ),
               ),
             ),
@@ -359,7 +357,6 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
               onTap: () {
                 setState(() {
                   _movie = _similar[i];
-                  _loading = true;
                   _ratingSubmitted = false;
                   _userRating = 0;
                 });
