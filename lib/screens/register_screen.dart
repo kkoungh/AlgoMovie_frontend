@@ -29,9 +29,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _loadGenres() async {
     try {
-      final data = await ApiService().get('/genres', auth: false) as List<dynamic>;
+      final data = await ApiService().get('/genres', auth: false) as Map<String, dynamic>;
       setState(() {
-        _allGenres = data.cast<Map<String, dynamic>>();
+        _allGenres = (data['genres'] as List<dynamic>).cast<Map<String, dynamic>>();
       });
     } catch (_) {}
   }
