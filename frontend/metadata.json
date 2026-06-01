@@ -1,0 +1,6 @@
+{
+  "name": "AlgoMovie",
+  "description": "AI-powered personalized movie recommendation engine and platform featuring interactive feedback loops and hybrid scoring models.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
