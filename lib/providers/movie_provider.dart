@@ -25,8 +25,9 @@ class MovieProvider extends ChangeNotifier {
 
   Future<void> loadGenres() async {
     try {
-      final data = await _api.get('/genres') as List<dynamic>;
-      _genres = ['전체', ...data.map((g) => g['name'].toString())];
+      final data = await _api.get('/genres') as Map<String, dynamic>;
+      final list = data['genres'] as List<dynamic>;
+      _genres = ['전체', ...list.map((g) => g['name'].toString())];
       notifyListeners();
     } catch (_) {}
   }
@@ -39,8 +40,9 @@ class MovieProvider extends ChangeNotifier {
       final path = genre != null && genre != '전체'
           ? '/movies?genre=${Uri.encodeComponent(genre)}'
           : '/movies';
-      final data = await _api.get(path) as List<dynamic>;
-      _movies = data.map((m) => Movie.fromJson(m as Map<String, dynamic>)).toList();
+      final data = await _api.get(path) as Map<String, dynamic>;
+      final list = data['movies'] as List<dynamic>;
+      _movies = list.map((m) => Movie.fromJson(m as Map<String, dynamic>)).toList();
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -63,8 +65,9 @@ class MovieProvider extends ChangeNotifier {
     _searchLoading = true;
     notifyListeners();
     try {
-      final data = await _api.get('/movies/search?q=${Uri.encodeComponent(query)}') as List<dynamic>;
-      _searchResults = data.map((m) => Movie.fromJson(m as Map<String, dynamic>)).toList();
+      final data = await _api.get('/movies/search?q=${Uri.encodeComponent(query)}') as Map<String, dynamic>;
+      final list = data['movies'] as List<dynamic>;
+      _searchResults = list.map((m) => Movie.fromJson(m as Map<String, dynamic>)).toList();
     } catch (_) {
       _searchResults = [];
     } finally {
@@ -86,8 +89,9 @@ class MovieProvider extends ChangeNotifier {
 
   Future<List<Movie>> loadSimilarMovies(int movieId) async {
     try {
-      final data = await _api.get('/movies/$movieId/similar') as List<dynamic>;
-      return data.map((m) => Movie.fromJson(m as Map<String, dynamic>)).toList();
+      final data = await _api.get('/movies/$movieId/similar') as Map<String, dynamic>;
+      final list = data['movies'] as List<dynamic>;
+      return list.map((m) => Movie.fromJson(m as Map<String, dynamic>)).toList();
     } catch (_) {
       return [];
     }
@@ -109,8 +113,8 @@ class MovieProvider extends ChangeNotifier {
   Future<bool> submitFeedback(int movieId, String type) async {
     try {
       await _api.post('/feedback', {
-        'movieId':      movieId,
-        'feedbackType': type,
+        'movieId': movieId,
+        'type':    type,
       });
       return true;
     } catch (_) {
@@ -120,7 +124,7 @@ class MovieProvider extends ChangeNotifier {
 
   Future<bool> toggleWishlist(int movieId) async {
     try {
-      await _api.post('/wishlist', {'movieId': movieId});
+      await _api.post('/wishlist/$movieId', {});
       return true;
     } catch (_) {
       return false;

@@ -16,7 +16,7 @@ class RatingItem {
   });
 
   factory RatingItem.fromJson(Map<String, dynamic> json) => RatingItem(
-        ratingId:  json['ratingId'] as int,
+        ratingId:  int.parse(json['ratingId'].toString()),
         score:     (json['score']   as num).toDouble(),
         review:    json['review']   as String?,
         createdAt: DateTime.parse(json['createdAt'] as String),

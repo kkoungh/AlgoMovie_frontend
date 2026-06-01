@@ -8,6 +8,8 @@ class ApiService {
   factory ApiService() => _instance;
   ApiService._internal();
 
+  static const _timeout = Duration(seconds: 10);
+
   final _storage = const FlutterSecureStorage();
 
   Future<String?> getToken() => _storage.read(key: 'access_token');
@@ -33,7 +35,7 @@ class ApiService {
     final res = await http.get(
       Uri.parse('${ApiConstants.baseUrl}$path'),
       headers: await _headers(auth: auth),
-    );
+    ).timeout(_timeout);
     return _parse(res);
   }
 
@@ -42,7 +44,7 @@ class ApiService {
       Uri.parse('${ApiConstants.baseUrl}$path'),
       headers: await _headers(auth: auth),
       body: jsonEncode(body),
-    );
+    ).timeout(_timeout);
     return _parse(res);
   }
 
@@ -51,7 +53,7 @@ class ApiService {
       Uri.parse('${ApiConstants.baseUrl}$path'),
       headers: await _headers(),
       body: jsonEncode(body),
-    );
+    ).timeout(_timeout);
     return _parse(res);
   }
 
@@ -59,7 +61,7 @@ class ApiService {
     final res = await http.delete(
       Uri.parse('${ApiConstants.baseUrl}$path'),
       headers: await _headers(),
-    );
+    ).timeout(_timeout);
     if (res.statusCode == 204) return null;
     return _parse(res);
   }

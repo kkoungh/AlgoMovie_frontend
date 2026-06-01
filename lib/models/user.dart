@@ -16,7 +16,7 @@ class User {
   });
 
   factory User.fromJson(Map<String, dynamic> json) => User(
-        userId:          json['userId'] as int,
+        userId:          int.parse(json['userId'].toString()),
         email:           json['email']  as String,
         nickname:        json['nickname'] as String,
         profileImageUrl: json['profileImageUrl'] as String?,
@@ -32,5 +32,5 @@ class Genre {
   final String name;
   Genre({required this.genreId, required this.name});
   factory Genre.fromJson(Map<String, dynamic> json) =>
-      Genre(genreId: json['genreId'] as int, name: json['name'] as String);
+      Genre(genreId: int.parse(json['genreId'].toString()), name: json['name'] as String);
 }

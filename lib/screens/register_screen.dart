@@ -46,10 +46,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedGenres.isEmpty) {
+    if (_selectedGenres.length < 3) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('장르를 1개 이상 선택하세요'),
+          content: Text('선호 장르를 최소 3개 선택해주세요'),
           backgroundColor: Color(0xFFE50914),
         ),
       );
@@ -63,7 +63,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       genres:   _selectedGenres.toList(),
     );
     if (mounted) setState(() => _loading = false);
-    if (!ok && mounted) {
+    if (ok && mounted) {
+      Navigator.of(context).pushNamedAndRemoveUntil('/home', (_) => false);
+    } else if (!ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(context.read<AuthProvider>().error ?? '회원가입 실패'),

@@ -34,10 +34,11 @@ class _MypageScreenState extends State<MypageScreen>
 
   Future<void> _loadRatings() async {
     try {
-      final data = await _api.get('/mypage/ratings') as List<dynamic>;
+      final data = await _api.get('/mypage/reviews') as Map<String, dynamic>;
+      final list = data['reviews'] as List<dynamic>;
       if (mounted) {
         setState(() {
-          _ratings = data
+          _ratings = list
               .map((r) => RatingItem.fromJson(r as Map<String, dynamic>))
               .toList();
           _ratingsLoading = false;
@@ -50,11 +51,14 @@ class _MypageScreenState extends State<MypageScreen>
 
   Future<void> _loadWishlist() async {
     try {
-      final data = await _api.get('/wishlist') as List<dynamic>;
+      final data = await _api.get('/mypage/wishlist') as Map<String, dynamic>;
+      final list = data['wishlist'] as List<dynamic>;
       if (mounted) {
         setState(() {
-          _wishlist = data
-              .map((m) => Movie.fromJson(m as Map<String, dynamic>))
+          _wishlist = list
+              .map((item) => Movie.fromJson(
+                    (item as Map<String, dynamic>)['movie'] as Map<String, dynamic>,
+                  ))
               .toList();
           _wishlistLoading = false;
         });
@@ -161,13 +165,14 @@ class _MypageScreenState extends State<MypageScreen>
                   children: [
                     _statChip('평가 ${user.ratingCount}편'),
                     const SizedBox(width: 8),
-                    if (user.preferredGenres.isNotEmpty)
-                      _statChip(
-                        user.preferredGenres
-                            .take(2)
-                            .map((g) => g.name)
-                            .join(' · '),
-                      ),
+                    _statChip(
+                      user.preferredGenres.isNotEmpty
+                          ? user.preferredGenres
+                              .take(2)
+                              .map((g) => g.name)
+                              .join(' · ')
+                          : '장르 미설정',
+                    ),
                   ],
                 ),
               ],

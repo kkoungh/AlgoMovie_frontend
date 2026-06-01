@@ -26,7 +26,7 @@ class Movie {
   });
 
   factory Movie.fromJson(Map<String, dynamic> json) => Movie(
-        movieId:     json['movieId']    as int,
+        movieId:     int.parse(json['movieId'].toString()),
         title:       json['title']      as String,
         genres:      (json['genres']    as List<dynamic>? ?? []).map((g) => g.toString()).toList(),
         director:    json['director']   as String?,
