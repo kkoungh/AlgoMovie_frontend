@@ -32,14 +32,15 @@ class MovieProvider extends ChangeNotifier {
     } catch (_) {}
   }
 
-  Future<void> loadMovies({String? genre}) async {
+  Future<void> loadMovies({String? genre, String? country}) async {
     _loading = true;
     _error = null;
     notifyListeners();
     try {
-      final path = genre != null && genre != '전체'
-          ? '/movies?genre=${Uri.encodeComponent(genre)}'
-          : '/movies';
+      final params = <String>[];
+      if (genre != null && genre != '전체') params.add('genre=${Uri.encodeComponent(genre)}');
+      if (country != null) params.add('country=${Uri.encodeComponent(country)}');
+      final path = params.isEmpty ? '/movies' : '/movies?${params.join('&')}';
       final data = await _api.get(path) as Map<String, dynamic>;
       final list = data['movies'] as List<dynamic>;
       _movies = list.map((m) => Movie.fromJson(m as Map<String, dynamic>)).toList();
@@ -128,6 +129,18 @@ class MovieProvider extends ChangeNotifier {
       return true;
     } catch (_) {
       return false;
+    }
+  }
+
+  Future<Set<int>> fetchWishlistIds() async {
+    try {
+      final data = await _api.get('/mypage/wishlist') as Map<String, dynamic>;
+      final list = data['wishlist'] as List<dynamic>;
+      return list
+          .map((e) => int.parse((e as Map<String, dynamic>)['movie']['movieId'].toString()))
+          .toSet();
+    } catch (_) {
+      return {};
     }
   }
 

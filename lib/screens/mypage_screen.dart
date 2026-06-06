@@ -1,4 +1,7 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
@@ -15,10 +18,11 @@ class MypageScreen extends StatefulWidget {
 class _MypageScreenState extends State<MypageScreen> {
   final _api = ApiService();
 
-  List<RatingItem>         _ratings = [];
+  List<RatingItem>           _ratings = [];
   List<Map<String, dynamic>> _history = [];
-  bool _ratingsLoading = true;
-  bool _historyLoading = true;
+  bool       _ratingsLoading = true;
+  bool       _historyLoading = true;
+  Uint8List? _pickedImageBytes;
 
   @override
   void initState() {
@@ -65,67 +69,102 @@ class _MypageScreenState extends State<MypageScreen> {
     final user = context.read<AuthProvider>().user;
     if (user == null) return;
     final nicknameCtrl = TextEditingController(text: user.nickname);
-    final imageCtrl    = TextEditingController(text: user.profileImageUrl ?? '');
+    Uint8List? dialogBytes = _pickedImageBytes;
+
     await showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E1E),
-        title: const Text('프로필 수정', style: TextStyle(color: Colors.white)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nicknameCtrl,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                labelText: '닉네임',
-                labelStyle: TextStyle(color: Colors.grey[400]),
-                filled: true,
-                fillColor: const Color(0xFF2A2A2A),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide.none,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: const Color(0xFF1E1E1E),
+          title: const Text('프로필 수정', style: TextStyle(color: Colors.white)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 아바타 미리보기 + 사진 선택
+              GestureDetector(
+                onTap: () async {
+                  final picker = ImagePicker();
+                  final xfile = await picker.pickImage(
+                    source: ImageSource.gallery,
+                    maxWidth: 400,
+                    imageQuality: 80,
+                  );
+                  if (xfile == null) return;
+                  final bytes = await xfile.readAsBytes();
+                  setDialogState(() => dialogBytes = bytes);
+                },
+                child: Stack(
+                  alignment: Alignment.bottomRight,
+                  children: [
+                    CircleAvatar(
+                      radius: 40,
+                      backgroundColor: const Color(0xFFE50914),
+                      backgroundImage: dialogBytes != null
+                          ? MemoryImage(dialogBytes!)
+                          : (user.profileImageUrl != null
+                              ? NetworkImage(user.profileImageUrl!) as ImageProvider
+                              : null),
+                      child: (dialogBytes == null && user.profileImageUrl == null)
+                          ? Text(user.nickname.isNotEmpty ? user.nickname[0].toUpperCase() : '?',
+                              style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold))
+                          : null,
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(5),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFE50914), shape: BoxShape.circle),
+                      child: const Icon(Icons.camera_alt, color: Colors.white, size: 14),
+                    ),
+                  ],
                 ),
               ),
+              const SizedBox(height: 6),
+              Text('탭하여 사진 선택', style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+              const SizedBox(height: 16),
+              TextField(
+                controller: nicknameCtrl,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: '닉네임',
+                  labelStyle: TextStyle(color: Colors.grey[400]),
+                  filled: true,
+                  fillColor: const Color(0xFF2A2A2A),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('취소', style: TextStyle(color: Colors.grey[400])),
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: imageCtrl,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                labelText: '프로필 이미지 URL',
-                labelStyle: TextStyle(color: Colors.grey[400]),
-                filled: true,
-                fillColor: const Color(0xFF2A2A2A),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide.none,
-                ),
-              ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                try {
+                  String? imageUrl = user.profileImageUrl;
+                  if (dialogBytes != null) {
+                    final b64 = base64Encode(dialogBytes!);
+                    imageUrl = 'data:image/jpeg;base64,$b64';
+                  }
+                  await _api.patch('/users/me', {
+                    'nickname': nicknameCtrl.text.trim(),
+                    if (imageUrl != null) 'profileImageUrl': imageUrl,
+                  });
+                  if (mounted) {
+                    setState(() => _pickedImageBytes = dialogBytes);
+                    await context.read<AuthProvider>().refreshProfile();
+                  }
+                } catch (_) {}
+              },
+              child: const Text('저장', style: TextStyle(color: Color(0xFFE50914))),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('취소', style: TextStyle(color: Colors.grey[400])),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              try {
-                await _api.patch('/users/me', {
-                  'nickname':        nicknameCtrl.text.trim(),
-                  'profileImageUrl': imageCtrl.text.trim().isEmpty
-                      ? null
-                      : imageCtrl.text.trim(),
-                });
-                if (mounted) await context.read<AuthProvider>().refreshProfile();
-              } catch (_) {}
-            },
-            child: const Text('저장', style: TextStyle(color: Color(0xFFE50914))),
-          ),
-        ],
       ),
     );
   }
@@ -237,10 +276,12 @@ class _MypageScreenState extends State<MypageScreen> {
               CircleAvatar(
                 radius: 36,
                 backgroundColor: const Color(0xFFE50914),
-                backgroundImage: user.profileImageUrl != null
-                    ? NetworkImage(user.profileImageUrl!)
-                    : null,
-                child: user.profileImageUrl == null
+                backgroundImage: _pickedImageBytes != null
+                    ? MemoryImage(_pickedImageBytes!) as ImageProvider
+                    : (user.profileImageUrl != null
+                        ? NetworkImage(user.profileImageUrl!)
+                        : null),
+                child: (_pickedImageBytes == null && user.profileImageUrl == null)
                     ? Text(
                         user.nickname.isNotEmpty ? user.nickname[0].toUpperCase() : '?',
                         style: const TextStyle(

@@ -20,6 +20,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   double _userRating = 0;
   final _reviewCtrl = TextEditingController();
   bool _ratingSubmitted = false;
+  bool _inWishlist = false;
+  bool _wishlistLoading = false;
 
   @override
   void didChangeDependencies() {
@@ -40,6 +42,32 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         _movie = detail ?? _movie;
         _similar = similar;
       });
+    }
+    _checkWishlist(id);
+  }
+
+  Future<void> _checkWishlist(int movieId) async {
+    try {
+      final api = context.read<MovieProvider>();
+      final data = await api.fetchWishlistIds();
+      if (mounted) setState(() => _inWishlist = data.contains(movieId));
+    } catch (_) {}
+  }
+
+  Future<void> _toggleWishlist() async {
+    if (_wishlistLoading) return;
+    setState(() => _wishlistLoading = true);
+    final ok = await context.read<MovieProvider>().toggleWishlist(_movie!.movieId);
+    if (mounted) {
+      setState(() {
+        if (ok) _inWishlist = !_inWishlist;
+        _wishlistLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(_inWishlist ? '위시리스트에 추가됐습니다' : '위시리스트에서 제거됐습니다'),
+        duration: const Duration(seconds: 2),
+        backgroundColor: const Color(0xFF2A2A2A),
+      ));
     }
   }
 
@@ -143,6 +171,23 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       pinned: true,
       backgroundColor: const Color(0xFF121212),
       foregroundColor: Colors.white,
+      actions: [
+        _wishlistLoading
+            ? const Padding(
+                padding: EdgeInsets.all(12),
+                child: SizedBox(
+                  width: 20, height: 20,
+                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                ),
+              )
+            : IconButton(
+                icon: Icon(
+                  _inWishlist ? Icons.favorite : Icons.favorite_border,
+                  color: _inWishlist ? const Color(0xFFE50914) : Colors.white,
+                ),
+                onPressed: _toggleWishlist,
+              ),
+      ],
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
           fit: StackFit.expand,

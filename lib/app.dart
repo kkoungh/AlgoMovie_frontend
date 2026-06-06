@@ -7,6 +7,7 @@ import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/main_shell.dart';
+import 'screens/mypage_screen.dart';
 import 'screens/movie_detail_screen.dart';
 import 'screens/search_screen.dart';
 
@@ -52,6 +53,7 @@ class App extends StatelessWidget {
           '/home':     (_) => const MainShell(),
           '/search':   (_) => const SearchScreen(),
           '/movie':    (_) => const MovieDetailScreen(),
+          '/mypage':   (_) => const MypageScreen(),
         },
       ),
     );
