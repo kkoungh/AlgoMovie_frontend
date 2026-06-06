@@ -4,15 +4,17 @@ import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  final List<Map<String, dynamic>>? initialGenres;
+
+  const RegisterScreen({super.key, this.initialGenres});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final _formKey      = GlobalKey<FormState>();
-  final _emailCtrl    = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   final _nicknameCtrl = TextEditingController();
   bool _obscure = true;
@@ -24,12 +26,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void initState() {
     super.initState();
-    _loadGenres();
+    if (widget.initialGenres != null) {
+      _allGenres = widget.initialGenres!;
+    } else {
+      _loadGenres();
+    }
   }
 
   Future<void> _loadGenres() async {
     try {
-      final data = await ApiService().get('/genres', auth: false) as List<dynamic>;
+      final data =
+          await ApiService().get('/genres', auth: false) as List<dynamic>;
       setState(() {
         _allGenres = data.cast<Map<String, dynamic>>();
       });
@@ -46,7 +53,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedGenres.isEmpty) {
+    if (_selectedGenres.length < 3) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('장르를 1개 이상 선택하세요'),
@@ -57,11 +64,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
     setState(() => _loading = true);
     final ok = await context.read<AuthProvider>().register(
-      email:    _emailCtrl.text.trim(),
-      password: _passwordCtrl.text,
-      nickname: _nicknameCtrl.text.trim(),
-      genres:   _selectedGenres.toList(),
-    );
+          email: _emailCtrl.text.trim(),
+          password: _passwordCtrl.text,
+          nickname: _nicknameCtrl.text.trim(),
+          genres: _selectedGenres.toList(),
+        );
     if (mounted) setState(() => _loading = false);
     if (!ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

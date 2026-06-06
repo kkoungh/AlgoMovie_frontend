@@ -12,11 +12,18 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final _ctrl = TextEditingController();
+  late MovieProvider _movieProvider;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _movieProvider = context.read<MovieProvider>();
+  }
 
   @override
   void dispose() {
     _ctrl.dispose();
-    context.read<MovieProvider>().clearSearch();
+    _movieProvider.clearSearch();
     super.dispose();
   }
 
@@ -36,8 +43,7 @@ class _SearchScreenState extends State<SearchScreen> {
             hintStyle: TextStyle(color: Colors.grey[500]),
             border: InputBorder.none,
           ),
-          onChanged: (v) =>
-              context.read<MovieProvider>().searchMovies(v),
+          onChanged: (v) => context.read<MovieProvider>().searchMovies(v),
         ),
         actions: [
           if (_ctrl.text.isNotEmpty)

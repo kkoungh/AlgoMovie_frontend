@@ -7,7 +7,14 @@ import '../models/movie.dart';
 import '../widgets/movie_card.dart';
 
 class MypageScreen extends StatefulWidget {
-  const MypageScreen({super.key});
+  final List<RatingItem>? initialRatings;
+  final List<Movie>? initialWishlist;
+
+  const MypageScreen({
+    super.key,
+    this.initialRatings,
+    this.initialWishlist,
+  });
 
   @override
   State<MypageScreen> createState() => _MypageScreenState();
@@ -18,17 +25,27 @@ class _MypageScreenState extends State<MypageScreen>
   late TabController _tabCtrl;
   final _api = ApiService();
 
-  List<RatingItem> _ratings  = [];
-  List<Movie>      _wishlist = [];
-  bool _ratingsLoading  = true;
+  List<RatingItem> _ratings = [];
+  List<Movie> _wishlist = [];
+  bool _ratingsLoading = true;
   bool _wishlistLoading = true;
 
   @override
   void initState() {
     super.initState();
     _tabCtrl = TabController(length: 2, vsync: this);
-    _loadRatings();
-    _loadWishlist();
+    if (widget.initialRatings != null) {
+      _ratings = widget.initialRatings!;
+      _ratingsLoading = false;
+    } else {
+      _loadRatings();
+    }
+    if (widget.initialWishlist != null) {
+      _wishlist = widget.initialWishlist!;
+      _wishlistLoading = false;
+    } else {
+      _loadWishlist();
+    }
     context.read<AuthProvider>().refreshProfile();
   }
 

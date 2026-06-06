@@ -52,10 +52,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   Future<void> _submitRating() async {
     if (_userRating == 0) return;
     final ok = await context.read<MovieProvider>().rateMovie(
-      _movie!.movieId,
-      _userRating,
-      review: _reviewCtrl.text.trim(),
-    );
+          _movie!.movieId,
+          _userRating,
+          review: _reviewCtrl.text.trim(),
+        );
     if (ok && mounted) {
       setState(() => _ratingSubmitted = true);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -91,27 +91,27 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                 children: [
                   _buildMeta(),
                   const SizedBox(height: 16),
-                  if (_movie!.overview != null && _movie!.overview!.isNotEmpty)
-                    ...[
-                      const Text(
-                        '줄거리',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                        ),
+                  if (_movie!.overview != null &&
+                      _movie!.overview!.isNotEmpty) ...[
+                    const Text(
+                      '줄거리',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _movie!.overview!,
-                        style: TextStyle(
-                          color: Colors.grey[300],
-                          height: 1.6,
-                          fontSize: 13,
-                        ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _movie!.overview!,
+                      style: TextStyle(
+                        color: Colors.grey[300],
+                        height: 1.6,
+                        fontSize: 13,
                       ),
-                      const SizedBox(height: 20),
-                    ],
+                    ),
+                    const SizedBox(height: 20),
+                  ],
                   if (_movie!.director != null) ...[
                     _infoRow('감독', _movie!.director!),
                     const SizedBox(height: 8),
@@ -212,17 +212,20 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         Wrap(
           spacing: 6,
           runSpacing: 6,
-          children: _movie!.genres.map((g) => Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFF2A2A2A),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              g,
-              style: TextStyle(color: Colors.grey[300], fontSize: 11),
-            ),
-          )).toList(),
+          children: _movie!.genres
+              .map((g) => Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2A2A2A),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      g,
+                      style: TextStyle(color: Colors.grey[300], fontSize: 11),
+                    ),
+                  ))
+              .toList(),
         ),
       ],
     );
@@ -348,7 +351,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 240,
+          height: 280,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: _similar.length,
