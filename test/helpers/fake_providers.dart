@@ -66,6 +66,19 @@ class FakeAuthProvider extends AuthProvider {
     lastEmail = email;
     lastPassword = password;
     lastGenres = genres;
+    if (registerResult) {
+      _status = AuthStatus.authenticated;
+      _user = User(
+        userId: 7,
+        email: email,
+        nickname: nickname,
+        ratingCount: 0,
+        preferredGenres:
+            genres.map((id) => Genre(genreId: id, name: 'Genre $id')).toList(),
+      );
+    } else {
+      _error = 'register failed';
+    }
     notifyListeners();
     return registerResult;
   }
