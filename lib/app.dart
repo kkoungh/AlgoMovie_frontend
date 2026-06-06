@@ -6,10 +6,10 @@ import 'providers/recommendation_provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
-import 'screens/home_screen.dart';
+import 'screens/main_shell.dart';
+import 'screens/mypage_screen.dart';
 import 'screens/movie_detail_screen.dart';
 import 'screens/search_screen.dart';
-import 'screens/mypage_screen.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -50,7 +50,7 @@ class App extends StatelessWidget {
         routes: {
           '/login':    (_) => const LoginScreen(),
           '/register': (_) => const RegisterScreen(),
-          '/home':     (_) => const HomeScreen(),
+          '/home':     (_) => const MainShell(),
           '/search':   (_) => const SearchScreen(),
           '/movie':    (_) => const MovieDetailScreen(),
           '/mypage':   (_) => const MypageScreen(),
@@ -69,7 +69,7 @@ class _AuthGate extends StatelessWidget {
       builder: (_, auth, __) {
         switch (auth.status) {
           case AuthStatus.authenticated:
-            return const HomeScreen();
+            return const MainShell();
           case AuthStatus.unauthenticated:
             return const LoginScreen();
           case AuthStatus.unknown:

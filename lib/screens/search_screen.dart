@@ -12,11 +12,18 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final _ctrl = TextEditingController();
+  late final MovieProvider _movieProvider;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _movieProvider = context.read<MovieProvider>();
+  }
 
   @override
   void dispose() {
     _ctrl.dispose();
-    context.read<MovieProvider>().clearSearch();
+    _movieProvider.clearSearch();
     super.dispose();
   }
 

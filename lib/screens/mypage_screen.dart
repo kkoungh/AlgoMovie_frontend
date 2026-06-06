@@ -1,10 +1,12 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../models/rating.dart';
 import '../models/movie.dart';
-import '../widgets/movie_card.dart';
 
 class MypageScreen extends StatefulWidget {
   const MypageScreen({super.key});
@@ -13,23 +15,23 @@ class MypageScreen extends StatefulWidget {
   State<MypageScreen> createState() => _MypageScreenState();
 }
 
-class _MypageScreenState extends State<MypageScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabCtrl;
+class _MypageScreenState extends State<MypageScreen> {
   final _api = ApiService();
 
-  List<RatingItem> _ratings  = [];
-  List<Movie>      _wishlist = [];
-  bool _ratingsLoading  = true;
-  bool _wishlistLoading = true;
+  List<RatingItem>           _ratings = [];
+  List<Map<String, dynamic>> _history = [];
+  bool       _ratingsLoading = true;
+  bool       _historyLoading = true;
+  Uint8List? _pickedImageBytes;
 
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: 2, vsync: this);
-    _loadRatings();
-    _loadWishlist();
-    context.read<AuthProvider>().refreshProfile();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AuthProvider>().refreshProfile();
+      _loadRatings();
+      _loadHistory();
+    });
   }
 
   Future<void> _loadRatings() async {
@@ -38,9 +40,7 @@ class _MypageScreenState extends State<MypageScreen>
       final list = data['reviews'] as List<dynamic>;
       if (mounted) {
         setState(() {
-          _ratings = list
-              .map((r) => RatingItem.fromJson(r as Map<String, dynamic>))
-              .toList();
+          _ratings = list.map((r) => RatingItem.fromJson(r as Map<String, dynamic>)).toList();
           _ratingsLoading = false;
         });
       }
@@ -49,29 +49,176 @@ class _MypageScreenState extends State<MypageScreen>
     }
   }
 
-  Future<void> _loadWishlist() async {
+  Future<void> _loadHistory() async {
     try {
-      final data = await _api.get('/mypage/wishlist') as Map<String, dynamic>;
-      final list = data['wishlist'] as List<dynamic>;
+      final data = await _api.get('/mypage/history') as Map<String, dynamic>;
+      final list = data['history'] as List<dynamic>;
       if (mounted) {
         setState(() {
-          _wishlist = list
-              .map((item) => Movie.fromJson(
-                    (item as Map<String, dynamic>)['movie'] as Map<String, dynamic>,
-                  ))
-              .toList();
-          _wishlistLoading = false;
+          _history = list.cast<Map<String, dynamic>>();
+          _historyLoading = false;
         });
       }
     } catch (_) {
-      if (mounted) setState(() => _wishlistLoading = false);
+      if (mounted) setState(() => _historyLoading = false);
     }
   }
 
-  @override
-  void dispose() {
-    _tabCtrl.dispose();
-    super.dispose();
+  // ── 프로필 수정 다이얼로그
+  Future<void> _editProfile() async {
+    final user = context.read<AuthProvider>().user;
+    if (user == null) return;
+    final nicknameCtrl = TextEditingController(text: user.nickname);
+    Uint8List? dialogBytes = _pickedImageBytes;
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: const Color(0xFF1E1E1E),
+          title: const Text('프로필 수정', style: TextStyle(color: Colors.white)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 아바타 미리보기 + 사진 선택
+              GestureDetector(
+                onTap: () async {
+                  final picker = ImagePicker();
+                  final xfile = await picker.pickImage(
+                    source: ImageSource.gallery,
+                    maxWidth: 400,
+                    imageQuality: 80,
+                  );
+                  if (xfile == null) return;
+                  final bytes = await xfile.readAsBytes();
+                  setDialogState(() => dialogBytes = bytes);
+                },
+                child: Stack(
+                  alignment: Alignment.bottomRight,
+                  children: [
+                    CircleAvatar(
+                      radius: 40,
+                      backgroundColor: const Color(0xFFE50914),
+                      backgroundImage: dialogBytes != null
+                          ? MemoryImage(dialogBytes!)
+                          : (user.profileImageUrl != null
+                              ? NetworkImage(user.profileImageUrl!) as ImageProvider
+                              : null),
+                      child: (dialogBytes == null && user.profileImageUrl == null)
+                          ? Text(user.nickname.isNotEmpty ? user.nickname[0].toUpperCase() : '?',
+                              style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold))
+                          : null,
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(5),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFE50914), shape: BoxShape.circle),
+                      child: const Icon(Icons.camera_alt, color: Colors.white, size: 14),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text('탭하여 사진 선택', style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+              const SizedBox(height: 16),
+              TextField(
+                controller: nicknameCtrl,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: '닉네임',
+                  labelStyle: TextStyle(color: Colors.grey[400]),
+                  filled: true,
+                  fillColor: const Color(0xFF2A2A2A),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('취소', style: TextStyle(color: Colors.grey[400])),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                try {
+                  String? imageUrl = user.profileImageUrl;
+                  if (dialogBytes != null) {
+                    final b64 = base64Encode(dialogBytes!);
+                    imageUrl = 'data:image/jpeg;base64,$b64';
+                  }
+                  await _api.patch('/users/me', {
+                    'nickname': nicknameCtrl.text.trim(),
+                    if (imageUrl != null) 'profileImageUrl': imageUrl,
+                  });
+                  if (mounted) {
+                    setState(() => _pickedImageBytes = dialogBytes);
+                    await context.read<AuthProvider>().refreshProfile();
+                  }
+                } catch (_) {}
+              },
+              child: const Text('저장', style: TextStyle(color: Color(0xFFE50914))),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmLogout() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        title: const Text('로그아웃', style: TextStyle(color: Colors.white)),
+        content: Text('로그아웃 하시겠습니까?', style: TextStyle(color: Colors.grey[400])),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('취소', style: TextStyle(color: Colors.grey[400])),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('로그아웃', style: TextStyle(color: Color(0xFFE50914))),
+          ),
+        ],
+      ),
+    );
+    if (ok == true && mounted) await context.read<AuthProvider>().logout();
+  }
+
+  Future<void> _confirmWithdraw() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        title: const Text('회원탈퇴', style: TextStyle(color: Color(0xFFE50914))),
+        content: Text(
+          '탈퇴하면 모든 데이터가 삭제되며 복구할 수 없습니다.\n정말 탈퇴하시겠습니까?',
+          style: TextStyle(color: Colors.grey[400]),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('취소', style: TextStyle(color: Colors.grey[400])),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('탈퇴하기', style: TextStyle(color: Color(0xFFE50914))),
+          ),
+        ],
+      ),
+    );
+    if (ok == true && mounted) {
+      try {
+        await _api.delete('/auth/withdraw');
+        if (mounted) await context.read<AuthProvider>().logout();
+      } catch (_) {}
+    }
   }
 
   @override
@@ -81,96 +228,120 @@ class _MypageScreenState extends State<MypageScreen>
       backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
         backgroundColor: const Color(0xFF121212),
-        foregroundColor: Colors.white,
-        title: const Text('마이페이지'),
+        title: const Text('마이페이지',
+            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout, color: Colors.white),
             onPressed: _confirmLogout,
           ),
         ],
-        bottom: TabBar(
-          controller: _tabCtrl,
-          indicatorColor: const Color(0xFFE50914),
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.grey,
-          tabs: const [
-            Tab(text: '내 평가'),
-            Tab(text: '위시리스트'),
+      ),
+      body: RefreshIndicator(
+        color: const Color(0xFFE50914),
+        backgroundColor: const Color(0xFF1E1E1E),
+        onRefresh: () async {
+          await Future.wait([
+            context.read<AuthProvider>().refreshProfile(),
+            _loadRatings(),
+            _loadHistory(),
+          ]);
+        },
+        child: ListView(
+          children: [
+            if (user != null) _buildProfile(user),
+            const SizedBox(height: 8),
+            _buildSectionHeader('내 리뷰', '${_ratings.length}편'),
+            _buildRatingsSection(),
+            const SizedBox(height: 8),
+            _buildSectionHeader('최근 본 영화', ''),
+            _buildHistorySection(),
+            const SizedBox(height: 24),
+            _buildDangerZone(),
+            const SizedBox(height: 40),
           ],
         ),
-      ),
-      body: Column(
-        children: [
-          if (user != null) _buildProfile(user),
-          Expanded(
-            child: TabBarView(
-              controller: _tabCtrl,
-              children: [
-                _buildRatingsTab(),
-                _buildWishlistTab(),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
 
   Widget _buildProfile(user) {
     return Container(
-      padding: const EdgeInsets.all(20),
       color: const Color(0xFF1E1E1E),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 32,
-            backgroundColor: const Color(0xFFE50914),
-            backgroundImage: user.profileImageUrl != null
-                ? NetworkImage(user.profileImageUrl!)
-                : null,
-            child: user.profileImageUrl == null
-                ? Text(
-                    user.nickname.isNotEmpty
-                        ? user.nickname[0].toUpperCase()
-                        : '?',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
+          Stack(
+            children: [
+              CircleAvatar(
+                radius: 36,
+                backgroundColor: const Color(0xFFE50914),
+                backgroundImage: _pickedImageBytes != null
+                    ? MemoryImage(_pickedImageBytes!) as ImageProvider
+                    : (user.profileImageUrl != null
+                        ? NetworkImage(user.profileImageUrl!)
+                        : null),
+                child: (_pickedImageBytes == null && user.profileImageUrl == null)
+                    ? Text(
+                        user.nickname.isNotEmpty ? user.nickname[0].toUpperCase() : '?',
+                        style: const TextStyle(
+                            color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                      )
+                    : null,
+              ),
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: GestureDetector(
+                  onTap: _editProfile,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFE50914),
+                      shape: BoxShape.circle,
                     ),
-                  )
-                : null,
+                    child: const Icon(Icons.camera_alt, color: Colors.white, size: 14),
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  user.nickname,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(user.nickname,
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                    ),
+                    GestureDetector(
+                      onTap: _editProfile,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2A2A2A),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Text('편집',
+                            style: TextStyle(color: Color(0xFFE50914), fontSize: 12)),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  user.email,
-                  style: TextStyle(color: Colors.grey[500], fontSize: 13),
-                ),
-                const SizedBox(height: 8),
+                Text(user.email, style: TextStyle(color: Colors.grey[500], fontSize: 13)),
+                const SizedBox(height: 10),
                 Row(
                   children: [
                     _statChip('평가 ${user.ratingCount}편'),
                     const SizedBox(width: 8),
                     _statChip(
                       user.preferredGenres.isNotEmpty
-                          ? user.preferredGenres
-                              .take(2)
-                              .map((g) => g.name)
-                              .join(' · ')
+                          ? user.preferredGenres.take(2).map((g) => g.name).join(' · ')
                           : '장르 미설정',
                     ),
                   ],
@@ -190,41 +361,56 @@ class _MypageScreenState extends State<MypageScreen>
         color: const Color(0xFF2A2A2A),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Text(
-        label,
-        style: TextStyle(color: Colors.grey[300], fontSize: 12),
+      child: Text(label, style: TextStyle(color: Colors.grey[300], fontSize: 11)),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, String sub) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
+      child: Row(
+        children: [
+          Text(title,
+              style: const TextStyle(
+                  color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+          const SizedBox(width: 8),
+          if (sub.isNotEmpty)
+            Text(sub, style: TextStyle(color: Colors.grey[500], fontSize: 13)),
+        ],
       ),
     );
   }
 
-  Widget _buildRatingsTab() {
+  Widget _buildRatingsSection() {
     if (_ratingsLoading) {
       return const Center(
-        child: CircularProgressIndicator(color: Color(0xFFE50914)),
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: CircularProgressIndicator(color: Color(0xFFE50914)),
+        ),
       );
     }
     if (_ratings.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.star_border, color: Colors.grey[700], size: 64),
-            const SizedBox(height: 16),
-            Text(
-              '아직 평가한 영화가 없습니다',
-              style: TextStyle(color: Colors.grey[500]),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              Icon(Icons.star_border, color: Colors.grey[700], size: 48),
+              const SizedBox(height: 12),
+              Text('아직 평가한 영화가 없습니다',
+                  style: TextStyle(color: Colors.grey[500])),
+            ],
+          ),
         ),
       );
     }
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
+      physics: const NeverScrollableScrollPhysics(),
+      shrinkWrap: true,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       itemCount: _ratings.length,
-      separatorBuilder: (_, __) => const Divider(
-        color: Color(0xFF2A2A2A),
-        height: 1,
-      ),
+      separatorBuilder: (_, __) => const Divider(color: Color(0xFF2A2A2A), height: 1),
       itemBuilder: (_, i) {
         final r = _ratings[i];
         return Padding(
@@ -234,75 +420,51 @@ class _MypageScreenState extends State<MypageScreen>
               ClipRRect(
                 borderRadius: BorderRadius.circular(6),
                 child: r.movie.posterUrl.isNotEmpty
-                    ? Image.network(
-                        r.movie.posterUrl,
-                        width: 50,
-                        height: 75,
-                        fit: BoxFit.cover,
-                      )
+                    ? Image.network(r.movie.posterUrl,
+                        width: 46, height: 68, fit: BoxFit.cover)
                     : Container(
-                        width: 50,
-                        height: 75,
+                        width: 46, height: 68,
                         color: const Color(0xFF2A2A2A),
-                        child: const Icon(
-                          Icons.movie,
-                          color: Colors.grey,
-                          size: 20,
-                        ),
-                      ),
+                        child: const Icon(Icons.movie, color: Colors.grey, size: 18)),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      r.movie.title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    Text(r.movie.title,
+                        style: const TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.w500),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis),
                     const SizedBox(height: 6),
                     Row(
                       children: List.generate(5, (j) {
                         final full = j < r.score.floor();
                         final half = !full && j < r.score;
                         return Icon(
-                          full
-                              ? Icons.star
-                              : half
-                                  ? Icons.star_half
-                                  : Icons.star_border,
+                          full ? Icons.star : half ? Icons.star_half : Icons.star_border,
                           color: const Color(0xFFFFD700),
                           size: 14,
                         );
                       }),
                     ),
-                    const SizedBox(height: 4),
                     if (r.review != null && r.review!.isNotEmpty)
-                      Text(
-                        r.review!,
-                        style: TextStyle(
-                          color: Colors.grey[400],
-                          fontSize: 12,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(r.review!,
+                            style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis),
                       ),
                   ],
                 ),
               ),
-              Text(
-                r.score.toStringAsFixed(1),
-                style: const TextStyle(
-                  color: Color(0xFFFFD700),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
+              Text(r.score.toStringAsFixed(1),
+                  style: const TextStyle(
+                      color: Color(0xFFFFD700),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16)),
             ],
           ),
         );
@@ -310,82 +472,114 @@ class _MypageScreenState extends State<MypageScreen>
     );
   }
 
-  Widget _buildWishlistTab() {
-    if (_wishlistLoading) {
+  Widget _buildHistorySection() {
+    if (_historyLoading) {
       return const Center(
-        child: CircularProgressIndicator(color: Color(0xFFE50914)),
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: CircularProgressIndicator(color: Color(0xFFE50914)),
+        ),
       );
     }
-    if (_wishlist.isEmpty) {
+    if (_history.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.bookmark_border, color: Colors.grey[700], size: 64),
-            const SizedBox(height: 16),
-            Text(
-              '위시리스트가 비어있습니다',
-              style: TextStyle(color: Colors.grey[500]),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              Icon(Icons.history, color: Colors.grey[700], size: 48),
+              const SizedBox(height: 12),
+              Text('최근 본 영화가 없습니다', style: TextStyle(color: Colors.grey[500])),
+            ],
+          ),
         ),
       );
     }
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 0.55,
-      ),
-      itemCount: _wishlist.length,
-      itemBuilder: (_, i) => MovieCard(
-        movie: _wishlist[i],
-        width: double.infinity,
-        height: 160,
-        onTap: () => Navigator.pushNamed(
-          context,
-          '/movie',
-          arguments: _wishlist[i],
-        ),
+    return SizedBox(
+      height: 180,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: _history.length,
+        itemBuilder: (_, i) {
+          final item = _history[i];
+          final movie = item['movie'] as Map<String, dynamic>;
+          final title = movie['title']?.toString() ?? '';
+          final posterPath = movie['posterPath']?.toString();
+          final movieId = int.tryParse(movie['movieId'].toString()) ?? 0;
+          final posterUrl = posterPath != null && posterPath.isNotEmpty
+              ? (posterPath.startsWith('http')
+                  ? posterPath
+                  : 'https://image.tmdb.org/t/p/w500$posterPath')
+              : '';
+
+          return GestureDetector(
+            onTap: () {
+              final m = Movie(
+                movieId: movieId,
+                title: title,
+                genres: (movie['genres'] as List<dynamic>? ?? []).map((e) => e.toString()).toList(),
+                avgRating: (movie['avgRating'] as num?)?.toDouble() ?? 0.0,
+                ratingCount: 0,
+              );
+              Navigator.pushNamed(context, '/movie', arguments: m);
+            },
+            child: Container(
+              width: 100,
+              margin: const EdgeInsets.only(right: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: posterUrl.isNotEmpty
+                          ? Image.network(posterUrl,
+                              width: 100, fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => _historyPlaceholder())
+                          : _historyPlaceholder(),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(title,
+                      style: const TextStyle(color: Colors.white, fontSize: 11),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 
-  Future<void> _confirmLogout() async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E1E),
-        title: const Text(
-          '로그아웃',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: const Text(
-          '로그아웃 하시겠습니까?',
-          style: TextStyle(color: Colors.grey),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(
-              '취소',
-              style: TextStyle(color: Colors.grey[400]),
+  Widget _historyPlaceholder() => Container(
+        color: const Color(0xFF2A2A2A),
+        child: const Center(child: Icon(Icons.movie, color: Colors.grey, size: 28)),
+      );
+
+  Widget _buildDangerZone() {
+    return Column(
+      children: [
+        const Divider(color: Color(0xFF2A2A2A)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _confirmWithdraw,
+              icon: const Icon(Icons.person_remove, color: Color(0xFFE50914), size: 18),
+              label: const Text('회원탈퇴', style: TextStyle(color: Color(0xFFE50914))),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFFE50914)),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
             ),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              '로그아웃',
-              style: TextStyle(color: Color(0xFFE50914)),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
-    if (ok == true && mounted) {
-      await context.read<AuthProvider>().logout();
-    }
   }
 }
