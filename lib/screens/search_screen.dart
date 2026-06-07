@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/movie_provider.dart';
 import '../widgets/movie_card.dart';
@@ -30,9 +30,9 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: const Color(0xFF0C0A07),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
+        backgroundColor: const Color(0xFF0C0A07),
         foregroundColor: Colors.white,
         title: TextField(
           controller: _ctrl,
@@ -61,7 +61,7 @@ class _SearchScreenState extends State<SearchScreen> {
         builder: (_, mp, __) {
           if (mp.searchLoading) {
             return const Center(
-              child: CircularProgressIndicator(color: Color(0xFFE50914)),
+              child: CircularProgressIndicator(color: Color(0xFFF59E0B)),
             );
           }
           if (_ctrl.text.isEmpty) {

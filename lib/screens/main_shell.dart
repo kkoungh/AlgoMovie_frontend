@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import 'category_screen.dart';
 import 'wishlist_screen.dart';
@@ -24,7 +24,7 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: const Color(0xFF0C0A07),
       body: IndexedStack(
         index: _currentIndex,
         children: _screens,
@@ -32,8 +32,8 @@ class _MainShellState extends State<MainShell> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
-        backgroundColor: const Color(0xFF1E1E1E),
-        selectedItemColor: const Color(0xFFE50914),
+        backgroundColor: const Color(0xFF1A1608),
+        selectedItemColor: const Color(0xFFF59E0B),
         unselectedItemColor: Colors.grey[600],
         type: BottomNavigationBarType.fixed,
         selectedFontSize: 11,

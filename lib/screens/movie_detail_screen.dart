@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../providers/movie_provider.dart';
@@ -66,7 +66,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(_inWishlist ? '위시리스트에 추가됐습니다' : '위시리스트에서 제거됐습니다'),
         duration: const Duration(seconds: 2),
-        backgroundColor: const Color(0xFF2A2A2A),
+        backgroundColor: const Color(0xFF252010),
       ));
     }
   }
@@ -100,14 +100,14 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   Widget build(BuildContext context) {
     if (_movie == null) {
       return const Scaffold(
-        backgroundColor: Color(0xFF121212),
+        backgroundColor: Color(0xFF0C0A07),
         body: Center(
-          child: CircularProgressIndicator(color: Color(0xFFE50914)),
+          child: CircularProgressIndicator(color: Color(0xFFF59E0B)),
         ),
       );
     }
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: const Color(0xFF0C0A07),
       body: CustomScrollView(
         slivers: [
           _buildHeader(),
@@ -169,7 +169,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     return SliverAppBar(
       expandedHeight: 280,
       pinned: true,
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: const Color(0xFF0C0A07),
       foregroundColor: Colors.white,
       actions: [
         _wishlistLoading
@@ -183,7 +183,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
             : IconButton(
                 icon: Icon(
                   _inWishlist ? Icons.favorite : Icons.favorite_border,
-                  color: _inWishlist ? const Color(0xFFE50914) : Colors.white,
+                  color: _inWishlist ? const Color(0xFFF59E0B) : Colors.white,
                 ),
                 onPressed: _toggleWishlist,
               ),
@@ -198,7 +198,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                 fit: BoxFit.cover,
               )
             else
-              Container(color: const Color(0xFF2A2A2A)),
+              Container(color: const Color(0xFF252010)),
             const DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -206,7 +206,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                   end: Alignment.bottomCenter,
                   colors: [
                     Colors.transparent,
-                    Color(0xFF121212),
+                    Color(0xFF0C0A07),
                   ],
                   stops: [0.5, 1.0],
                 ),
@@ -262,7 +262,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF2A2A2A),
+                      color: const Color(0xFF252010),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -323,7 +323,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E),
+        color: const Color(0xFF1A1608),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -353,7 +353,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
               hintText: '한줄 감상 (선택)',
               hintStyle: TextStyle(color: Colors.grey[600], fontSize: 13),
               filled: true,
-              fillColor: const Color(0xFF2A2A2A),
+              fillColor: const Color(0xFF252010),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide.none,
@@ -367,7 +367,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
             child: ElevatedButton(
               onPressed: _userRating > 0 ? _submitRating : null,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFE50914),
+                backgroundColor: const Color(0xFFF59E0B),
                 foregroundColor: Colors.white,
                 disabledBackgroundColor: const Color(0xFF3A1A1A),
                 shape: RoundedRectangleBorder(

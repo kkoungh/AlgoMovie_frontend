@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -112,7 +112,7 @@ class _MypageScreenState extends State<MypageScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: const Color(0xFF1E1E1E),
+          backgroundColor: const Color(0xFF1A1608),
           title: const Text('프로필 수정', style: TextStyle(color: Colors.white)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -135,7 +135,7 @@ class _MypageScreenState extends State<MypageScreen> {
                   children: [
                     CircleAvatar(
                       radius: 40,
-                      backgroundColor: const Color(0xFFE50914),
+                      backgroundColor: const Color(0xFFF59E0B),
                       backgroundImage: dialogBytes != null
                           ? MemoryImage(dialogBytes!)
                           : (user.profileImageUrl != null
@@ -157,7 +157,7 @@ class _MypageScreenState extends State<MypageScreen> {
                     Container(
                       padding: const EdgeInsets.all(5),
                       decoration: const BoxDecoration(
-                          color: Color(0xFFE50914), shape: BoxShape.circle),
+                          color: Color(0xFFF59E0B), shape: BoxShape.circle),
                       child: const Icon(Icons.camera_alt,
                           color: Colors.white, size: 14),
                     ),
@@ -175,7 +175,7 @@ class _MypageScreenState extends State<MypageScreen> {
                   labelText: '닉네임',
                   labelStyle: TextStyle(color: Colors.grey[400]),
                   filled: true,
-                  fillColor: const Color(0xFF2A2A2A),
+                  fillColor: const Color(0xFF252010),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide.none,
@@ -209,7 +209,7 @@ class _MypageScreenState extends State<MypageScreen> {
                 } catch (_) {}
               },
               child:
-                  const Text('저장', style: TextStyle(color: Color(0xFFE50914))),
+                  const Text('저장', style: TextStyle(color: Color(0xFFF59E0B))),
             ),
           ],
         ),
@@ -221,7 +221,7 @@ class _MypageScreenState extends State<MypageScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E1E),
+        backgroundColor: const Color(0xFF1A1608),
         title: const Text('로그아웃', style: TextStyle(color: Colors.white)),
         content:
             Text('로그아웃 하시겠습니까?', style: TextStyle(color: Colors.grey[400])),
@@ -233,7 +233,7 @@ class _MypageScreenState extends State<MypageScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child:
-                const Text('로그아웃', style: TextStyle(color: Color(0xFFE50914))),
+                const Text('로그아웃', style: TextStyle(color: Color(0xFFF59E0B))),
           ),
         ],
       ),
@@ -245,8 +245,8 @@ class _MypageScreenState extends State<MypageScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E1E),
-        title: const Text('회원탈퇴', style: TextStyle(color: Color(0xFFE50914))),
+        backgroundColor: const Color(0xFF1A1608),
+        title: const Text('회원탈퇴', style: TextStyle(color: Color(0xFFF59E0B))),
         content: Text(
           '탈퇴하면 모든 데이터가 삭제되며 복구할 수 없습니다.\n정말 탈퇴하시겠습니까?',
           style: TextStyle(color: Colors.grey[400]),
@@ -259,7 +259,7 @@ class _MypageScreenState extends State<MypageScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child:
-                const Text('탈퇴하기', style: TextStyle(color: Color(0xFFE50914))),
+                const Text('탈퇴하기', style: TextStyle(color: Color(0xFFF59E0B))),
           ),
         ],
       ),
@@ -276,9 +276,9 @@ class _MypageScreenState extends State<MypageScreen> {
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().user;
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: const Color(0xFF0C0A07),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
+        backgroundColor: const Color(0xFF0C0A07),
         title: const Text('마이페이지',
             style: TextStyle(
                 color: Colors.white,
@@ -292,8 +292,8 @@ class _MypageScreenState extends State<MypageScreen> {
         ],
       ),
       body: RefreshIndicator(
-        color: const Color(0xFFE50914),
-        backgroundColor: const Color(0xFF1E1E1E),
+        color: const Color(0xFFF59E0B),
+        backgroundColor: const Color(0xFF1A1608),
         onRefresh: () async {
           await Future.wait([
             context.read<AuthProvider>().refreshProfile(),
@@ -323,7 +323,7 @@ class _MypageScreenState extends State<MypageScreen> {
 
   Widget _buildProfile(user) {
     return Container(
-      color: const Color(0xFF1E1E1E),
+      color: const Color(0xFF1A1608),
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
       child: Row(
         children: [
@@ -331,7 +331,7 @@ class _MypageScreenState extends State<MypageScreen> {
             children: [
               CircleAvatar(
                 radius: 36,
-                backgroundColor: const Color(0xFFE50914),
+                backgroundColor: const Color(0xFFF59E0B),
                 backgroundImage: _pickedImageBytes != null
                     ? MemoryImage(_pickedImageBytes!) as ImageProvider
                     : (user.profileImageUrl != null
@@ -358,7 +358,7 @@ class _MypageScreenState extends State<MypageScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(4),
                     decoration: const BoxDecoration(
-                      color: Color(0xFFE50914),
+                      color: Color(0xFFF59E0B),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.camera_alt,
@@ -388,12 +388,12 @@ class _MypageScreenState extends State<MypageScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF2A2A2A),
+                          color: const Color(0xFF252010),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Text('편집',
                             style: TextStyle(
-                                color: Color(0xFFE50914), fontSize: 12)),
+                                color: Color(0xFFF59E0B), fontSize: 12)),
                       ),
                     ),
                   ],
@@ -428,7 +428,7 @@ class _MypageScreenState extends State<MypageScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFF2A2A2A),
+        color: const Color(0xFF252010),
         borderRadius: BorderRadius.circular(12),
       ),
       child:
@@ -440,7 +440,7 @@ class _MypageScreenState extends State<MypageScreen> {
     if (_statsLoading) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 16),
-        child: Center(child: CircularProgressIndicator(color: Color(0xFFE50914))),
+        child: Center(child: CircularProgressIndicator(color: Color(0xFFF59E0B))),
       );
     }
     final s = _stats;
@@ -449,7 +449,7 @@ class _MypageScreenState extends State<MypageScreen> {
         margin: const EdgeInsets.symmetric(horizontal: 16),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF1E1E1E),
+          color: const Color(0xFF1A1608),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -474,7 +474,7 @@ class _MypageScreenState extends State<MypageScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E),
+        color: const Color(0xFF1A1608),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFF2A2A4A)),
       ),
@@ -493,7 +493,7 @@ class _MypageScreenState extends State<MypageScreen> {
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2A2A2A),
+                  color: const Color(0xFF252010),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Column(children: [
@@ -515,13 +515,13 @@ class _MypageScreenState extends State<MypageScreen> {
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2A2A2A),
+                  color: const Color(0xFF252010),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Column(children: [
-                  Text('$total', style: const TextStyle(color: Color(0xFFE50914), fontSize: 28, fontWeight: FontWeight.bold)),
+                  Text('$total', style: const TextStyle(color: Color(0xFFF59E0B), fontSize: 28, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
-                  const Icon(Icons.movie_outlined, color: Color(0xFFE50914), size: 16),
+                  const Icon(Icons.movie_outlined, color: Color(0xFFF59E0B), size: 16),
                   const SizedBox(height: 4),
                   Text('평가한 영화', style: TextStyle(color: Colors.grey[500], fontSize: 11)),
                 ]),
@@ -551,7 +551,7 @@ class _MypageScreenState extends State<MypageScreen> {
                       child: LinearProgressIndicator(
                         value: ratio,
                         minHeight: 8,
-                        backgroundColor: const Color(0xFF2A2A2A),
+                        backgroundColor: const Color(0xFF252010),
                         valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF7C83FD)),
                       ),
                     ),
@@ -607,14 +607,14 @@ class _MypageScreenState extends State<MypageScreen> {
             height: 32,
             padding: const EdgeInsets.symmetric(horizontal: 10),
             decoration: BoxDecoration(
-              color: const Color(0xFF1E1E1E),
+              color: const Color(0xFF1A1608),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFF2A2A2A)),
+              border: Border.all(color: const Color(0xFF252010)),
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<int>(
                 value: _ratingPageSize,
-                dropdownColor: const Color(0xFF1E1E1E),
+                dropdownColor: const Color(0xFF1A1608),
                 icon:
                     Icon(Icons.expand_more, color: Colors.grey[400], size: 18),
                 style: const TextStyle(color: Colors.white, fontSize: 12),
@@ -643,7 +643,7 @@ class _MypageScreenState extends State<MypageScreen> {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(24),
-          child: CircularProgressIndicator(color: Color(0xFFE50914)),
+          child: CircularProgressIndicator(color: Color(0xFFF59E0B)),
         ),
       );
     }
@@ -677,7 +677,7 @@ class _MypageScreenState extends State<MypageScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           itemCount: visibleRatings.length,
           separatorBuilder: (_, __) =>
-              const Divider(color: Color(0xFF2A2A2A), height: 1),
+              const Divider(color: Color(0xFF252010), height: 1),
           itemBuilder: (_, i) {
             final r = visibleRatings[i];
             return Padding(
@@ -692,7 +692,7 @@ class _MypageScreenState extends State<MypageScreen> {
                         : Container(
                             width: 46,
                             height: 68,
-                            color: const Color(0xFF2A2A2A),
+                            color: const Color(0xFF252010),
                             child: const Icon(Icons.movie,
                                 color: Colors.grey, size: 18)),
                   ),
@@ -786,9 +786,9 @@ class _MypageScreenState extends State<MypageScreen> {
             alignment: Alignment.center,
             padding: const EdgeInsets.symmetric(horizontal: 14),
             decoration: BoxDecoration(
-              color: const Color(0xFF1E1E1E),
+              color: const Color(0xFF1A1608),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFF2A2A2A)),
+              border: Border.all(color: const Color(0xFF252010)),
             ),
             child: Text(
               '${_ratingPageIndex + 1} / $totalPages',
@@ -812,7 +812,7 @@ class _MypageScreenState extends State<MypageScreen> {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(24),
-          child: CircularProgressIndicator(color: Color(0xFFE50914)),
+          child: CircularProgressIndicator(color: Color(0xFFF59E0B)),
         ),
       );
     }
@@ -894,7 +894,7 @@ class _MypageScreenState extends State<MypageScreen> {
   }
 
   Widget _historyPlaceholder() => Container(
-        color: const Color(0xFF2A2A2A),
+        color: const Color(0xFF252010),
         child: const Center(
             child: Icon(Icons.movie, color: Colors.grey, size: 28)),
       );
@@ -902,7 +902,7 @@ class _MypageScreenState extends State<MypageScreen> {
   Widget _buildDangerZone() {
     return Column(
       children: [
-        const Divider(color: Color(0xFF2A2A2A)),
+        const Divider(color: Color(0xFF252010)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: SizedBox(
@@ -910,11 +910,11 @@ class _MypageScreenState extends State<MypageScreen> {
             child: OutlinedButton.icon(
               onPressed: _confirmWithdraw,
               icon: const Icon(Icons.person_remove,
-                  color: Color(0xFFE50914), size: 18),
+                  color: Color(0xFFF59E0B), size: 18),
               label: const Text('회원탈퇴',
-                  style: TextStyle(color: Color(0xFFE50914))),
+                  style: TextStyle(color: Color(0xFFF59E0B))),
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Color(0xFFE50914)),
+                side: const BorderSide(color: Color(0xFFF59E0B)),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8)),

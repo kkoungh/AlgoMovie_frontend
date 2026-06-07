@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 
@@ -23,7 +23,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: const Color(0xFF0C0A07),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -31,7 +31,7 @@ class _SplashScreenState extends State<SplashScreen> {
             const Text(
               'ALGOMOVIE',
               style: TextStyle(
-                color: Color(0xFFE50914),
+                color: Color(0xFFF59E0B),
                 fontSize: 36,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 4,
@@ -43,7 +43,7 @@ class _SplashScreenState extends State<SplashScreen> {
               style: TextStyle(color: Colors.grey[400], fontSize: 14),
             ),
             const SizedBox(height: 48),
-            const CircularProgressIndicator(color: Color(0xFFE50914)),
+            const CircularProgressIndicator(color: Color(0xFFF59E0B)),
           ],
         ),
       ),

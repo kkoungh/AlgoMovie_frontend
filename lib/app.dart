@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/movie_provider.dart';
@@ -27,14 +27,14 @@ class App extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           brightness: Brightness.dark,
-          scaffoldBackgroundColor: const Color(0xFF121212),
+          scaffoldBackgroundColor: const Color(0xFF0C0A07),
           colorScheme: const ColorScheme.dark(
-            primary: Color(0xFFE50914),
-            secondary: Color(0xFFE50914),
-            surface: Color(0xFF1E1E1E),
+            primary: Color(0xFFF59E0B),
+            secondary: Color(0xFFF59E0B),
+            surface: Color(0xFF1A1608),
           ),
           appBarTheme: const AppBarTheme(
-            backgroundColor: Color(0xFF121212),
+            backgroundColor: Color(0xFF0C0A07),
             elevation: 0,
             titleTextStyle: TextStyle(
               color: Colors.white,

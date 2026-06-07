@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/api_service.dart';
 import '../models/movie.dart';
@@ -80,7 +80,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
           SnackBar(
             content: Text('${movie.title} 위시리스트에서 제거됨'),
             duration: const Duration(seconds: 2),
-            backgroundColor: const Color(0xFF2A2A2A),
+            backgroundColor: const Color(0xFF252010),
           ),
         );
       }
@@ -91,7 +91,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E1E),
+        backgroundColor: const Color(0xFF1A1608),
         title: const Text('위시리스트 제거', style: TextStyle(color: Colors.white)),
         content: Text('${movie.title}을(를) 제거하시겠습니까?',
             style: TextStyle(color: Colors.grey[400])),
@@ -102,7 +102,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('제거', style: TextStyle(color: Color(0xFFE50914))),
+            child: const Text('제거', style: TextStyle(color: Color(0xFFF59E0B))),
           ),
         ],
       ),
@@ -113,9 +113,9 @@ class _WishlistScreenState extends State<WishlistScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: const Color(0xFF0C0A07),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
+        backgroundColor: const Color(0xFF0C0A07),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -133,10 +133,10 @@ class _WishlistScreenState extends State<WishlistScreen> {
       ),
       body: _loading
           ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFFE50914)))
+              child: CircularProgressIndicator(color: Color(0xFFF59E0B)))
           : RefreshIndicator(
-              color: const Color(0xFFE50914),
-              backgroundColor: const Color(0xFF1E1E1E),
+              color: const Color(0xFFF59E0B),
+              backgroundColor: const Color(0xFF1A1608),
               onRefresh: _load,
               child: _items.isEmpty ? _buildEmpty() : _buildGrid(),
             ),
@@ -222,7 +222,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
   }
 
   Widget _placeholder() => Container(
-        color: const Color(0xFF2A2A2A),
+        color: const Color(0xFF252010),
         child: const Center(
             child: Icon(Icons.movie, color: Colors.grey, size: 28)),
       );

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/movie_provider.dart';
 import '../providers/recommendation_provider.dart';
@@ -48,11 +48,11 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: const Color(0xFF0C0A07),
       body: SafeArea(
         child: RefreshIndicator(
-          color: const Color(0xFFE50914),
-          backgroundColor: const Color(0xFF1E1E1E),
+          color: const Color(0xFFF59E0B),
+          backgroundColor: const Color(0xFF1A1608),
           onRefresh: _loadAll,
           child: CustomScrollView(
             slivers: [
@@ -63,7 +63,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildGenreFilter(),
                 _buildHeroSpotlight(),
                 _buildRecommendationSection(),
-                _buildWeightDashboard(),
                 _buildAllMoviesSection(),
               ] else ...[
                 _buildPopularSection(),
@@ -78,14 +77,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildAppBar() {
     return SliverAppBar(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: const Color(0xFF0C0A07),
       floating: true,
       snap: true,
       elevation: 0,
       title: const Text(
         'ALGOMOVIE',
         style: TextStyle(
-          color: Color(0xFFE50914),
+          color: Color(0xFFF59E0B),
           fontSize: 22,
           fontWeight: FontWeight.w900,
           letterSpacing: 3,
@@ -112,7 +111,7 @@ class _HomeScreenState extends State<HomeScreen> {
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: const Color(0xFF1E1E1E),
+            color: const Color(0xFF1A1608),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
@@ -133,7 +132,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         decoration: BoxDecoration(
-          color: const Color(0xFF1E1E1E),
+          color: const Color(0xFF1A1608),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
@@ -145,7 +144,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   decoration: BoxDecoration(
-                    color: selected ? const Color(0xFFE50914) : Colors.transparent,
+                    color: selected ? const Color(0xFFF59E0B) : Colors.transparent,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -189,8 +188,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     decoration: BoxDecoration(
                       color: selected
-                          ? const Color(0xFFE50914)
-                          : const Color(0xFF2A2A2A),
+                          ? const Color(0xFFF59E0B)
+                          : const Color(0xFF252010),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -237,7 +236,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         alignment: Alignment.topCenter,
                       )
                     : null,
-                color: const Color(0xFF2A2A2A),
+                color: const Color(0xFF252010),
               ),
               child: Container(
                 decoration: BoxDecoration(
@@ -262,7 +261,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         vertical: 3,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE50914),
+                        color: const Color(0xFFF59E0B),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: const Text(
@@ -352,7 +351,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(
                   height: 240,
                   child: Center(
-                    child: CircularProgressIndicator(color: Color(0xFFE50914)),
+                    child: CircularProgressIndicator(color: Color(0xFFF59E0B)),
                   ),
                 )
               else if (rp.recommendations.isEmpty)
@@ -395,113 +394,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildWeightDashboard() {
-    return SliverToBoxAdapter(
-      child: Consumer<RecommendationProvider>(
-        builder: (_, rp, __) {
-          final w = rp.weights;
-          if (w == null) return const SizedBox.shrink();
-
-          final alpha   = (w['alpha']   as num?)?.toDouble() ?? 0.0;
-          final beta    = (w['beta']    as num?)?.toDouble() ?? 0.0;
-          final gamma   = (w['gamma']   as num?)?.toDouble() ?? 0.0;
-          final segment = w['segment']  as String? ?? '';
-
-          return Container(
-            margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1A1A2E),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFF2A2A4A)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.tune,
-                      color: Color(0xFF7C83FD),
-                      size: 18,
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      '알고리즘 가중치',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF2A2A4A),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        segment,
-                        style: const TextStyle(
-                          color: Color(0xFF7C83FD),
-                          fontSize: 11,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                _weightRow('α  협업 필터링', alpha, const Color(0xFFE50914)),
-                const SizedBox(height: 8),
-                _weightRow('β  콘텐츠 기반', beta, const Color(0xFF4FC3F7)),
-                const SizedBox(height: 8),
-                _weightRow('γ  인기도', gamma, const Color(0xFF81C784)),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _weightRow(String label, double value, Color color) {
-    return Row(
-      children: [
-        SizedBox(
-          width: 110,
-          child: Text(
-            label,
-            style: TextStyle(color: Colors.grey[400], fontSize: 12),
-          ),
-        ),
-        Expanded(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: value,
-              backgroundColor: const Color(0xFF2A2A2A),
-              valueColor: AlwaysStoppedAnimation<Color>(color),
-              minHeight: 8,
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          '${(value * 100).toInt()}%',
-          style: TextStyle(
-            color: color,
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildAllMoviesSection() {
     return SliverToBoxAdapter(
       child: Consumer<MovieProvider>(
@@ -510,7 +402,7 @@ class _HomeScreenState extends State<HomeScreen> {
             return const SizedBox(
               height: 240,
               child: Center(
-                child: CircularProgressIndicator(color: Color(0xFFE50914)),
+                child: CircularProgressIndicator(color: Color(0xFFF59E0B)),
               ),
             );
           }
@@ -563,7 +455,7 @@ class _HomeScreenState extends State<HomeScreen> {
             return const SizedBox(
               height: 300,
               child: Center(
-                child: CircularProgressIndicator(color: Color(0xFFE50914)),
+                child: CircularProgressIndicator(color: Color(0xFFF59E0B)),
               ),
             );
           }
@@ -594,14 +486,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2A1A1A),
+                        color: const Color(0xFF251E08),
                         borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: const Color(0xFFE50914).withValues(alpha: 0.6)),
+                        border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.6)),
                       ),
                       child: Text(
                         _sortMode == '주간인기순' ? '7일' : '30일',
                         style: const TextStyle(
-                          color: Color(0xFFE50914),
+                          color: Color(0xFFF59E0B),
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
                         ),
@@ -656,7 +548,7 @@ class _HomeScreenState extends State<HomeScreen> {
           duration: const Duration(seconds: 1),
           backgroundColor: type == 'LIKE'
               ? const Color(0xFF4CAF50)
-              : const Color(0xFFE50914),
+              : const Color(0xFFF59E0B),
         ),
       );
       if (type == 'LIKE') {

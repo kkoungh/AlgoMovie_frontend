@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/movie_provider.dart';
 import '../models/movie.dart';
@@ -59,7 +59,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: const Color(0xFF0C0A07),
       appBar: AppBar(
         backgroundColor: const Color(0xFF1A1A1A),
         title: const Text('카테고리',
@@ -75,10 +75,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
         children: [
           // 1단계: 국가 패널
           _buildCountryPanel(),
-          const VerticalDivider(color: Color(0xFF2A2A2A), width: 1),
+          const VerticalDivider(color: Color(0xFF252010), width: 1),
           // 2단계: 장르 패널
           _buildGenrePanel(),
-          const VerticalDivider(color: Color(0xFF2A2A2A), width: 1),
+          const VerticalDivider(color: Color(0xFF252010), width: 1),
           // 3단계: 영화 그리드
           Expanded(child: _buildMovieGrid()),
         ],
@@ -132,7 +132,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
     return Consumer<MovieProvider>(
       builder: (_, mp, __) {
         if (mp.loading) {
-          return const Center(child: CircularProgressIndicator(color: Color(0xFFE50914)));
+          return const Center(child: CircularProgressIndicator(color: Color(0xFFF59E0B)));
         }
         if (mp.movies.isEmpty) {
           return Center(
@@ -194,13 +194,13 @@ class _PanelItem extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        color: selected ? const Color(0xFF1E1E1E) : const Color(0xFF141414),
+        color: selected ? const Color(0xFF1A1608) : const Color(0xFF141414),
         child: Stack(
           children: [
             if (selected)
               Positioned(
                 left: 0, top: 0, bottom: 0,
-                child: Container(width: 3, color: const Color(0xFFE50914)),
+                child: Container(width: 3, color: const Color(0xFFF59E0B)),
               ),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 6),
@@ -268,6 +268,6 @@ class _MovieItem extends StatelessWidget {
   }
 
   Widget _placeholder() => Container(
-      color: const Color(0xFF2A2A2A),
+      color: const Color(0xFF252010),
       child: const Center(child: Icon(Icons.movie, color: Colors.grey, size: 28)));
 }

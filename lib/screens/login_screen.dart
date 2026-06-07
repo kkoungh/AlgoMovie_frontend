@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 
@@ -35,7 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(context.read<AuthProvider>().error ?? '로그인 실패'),
-          backgroundColor: const Color(0xFFE50914),
+          backgroundColor: const Color(0xFFF59E0B),
         ),
       );
     }
@@ -44,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: const Color(0xFF0C0A07),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -54,7 +54,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const Text(
                 'ALGOMOVIE',
                 style: TextStyle(
-                  color: Color(0xFFE50914),
+                  color: Color(0xFFF59E0B),
                   fontSize: 32,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 4,
@@ -99,7 +99,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: ElevatedButton(
                         onPressed: _loading ? null : _login,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFE50914),
+                          backgroundColor: const Color(0xFFF59E0B),
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
@@ -160,16 +160,16 @@ class _LoginScreenState extends State<LoginScreen> {
         labelStyle: TextStyle(color: Colors.grey[400]),
         suffixIcon: suffix,
         filled: true,
-        fillColor: const Color(0xFF1E1E1E),
+        fillColor: const Color(0xFF1A1608),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFFE50914)),
+          borderSide: const BorderSide(color: Color(0xFFF59E0B)),
         ),
-        errorStyle: const TextStyle(color: Color(0xFFE50914)),
+        errorStyle: const TextStyle(color: Color(0xFFF59E0B)),
       ),
       validator: validator,
     );

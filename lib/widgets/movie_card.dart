@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/movie.dart';
 
@@ -70,7 +70,7 @@ class MovieCard extends StatelessWidget {
       return Container(
         width: width,
         height: height,
-        color: const Color(0xFF2A2A2A),
+        color: const Color(0xFF252010),
         child: const Icon(Icons.movie, color: Colors.grey, size: 40),
       );
     }
@@ -82,18 +82,18 @@ class MovieCard extends StatelessWidget {
       placeholder: (_, __) => Container(
         width: width,
         height: height,
-        color: const Color(0xFF2A2A2A),
+        color: const Color(0xFF252010),
         child: const Center(
           child: CircularProgressIndicator(
             strokeWidth: 2,
-            color: Color(0xFFE50914),
+            color: Color(0xFFF59E0B),
           ),
         ),
       ),
       errorWidget: (_, __, ___) => Container(
         width: width,
         height: height,
-        color: const Color(0xFF2A2A2A),
+        color: const Color(0xFF252010),
         child: const Icon(Icons.broken_image, color: Colors.grey, size: 40),
       ),
     );
@@ -120,7 +120,7 @@ class MovieCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             _feedbackBtn(Icons.thumb_up, 'LIKE', const Color(0xFF4CAF50)),
-            _feedbackBtn(Icons.thumb_down, 'DISLIKE', const Color(0xFFE50914)),
+            _feedbackBtn(Icons.thumb_down, 'DISLIKE', const Color(0xFFF59E0B)),
           ],
         ),
       ),
