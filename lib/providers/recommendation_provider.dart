@@ -10,12 +10,14 @@ class RecommendationProvider extends ChangeNotifier {
   String? _error;
   Map<String, dynamic>? _weights;
   bool _fromCache = false;
+  bool _isNewUser = false;
 
-  List<Movie>          get recommendations => _recommendations;
-  bool                 get loading         => _loading;
-  String?              get error           => _error;
-  Map<String, dynamic>? get weights        => _weights;
-  bool                 get fromCache       => _fromCache;
+  List<Movie>           get recommendations => _recommendations;
+  bool                  get loading         => _loading;
+  String?               get error           => _error;
+  Map<String, dynamic>? get weights         => _weights;
+  bool                  get fromCache       => _fromCache;
+  bool                  get isNewUser       => _isNewUser;
 
   Future<void> loadRecommendations() async {
     _loading = true;
@@ -27,8 +29,9 @@ class RecommendationProvider extends ChangeNotifier {
       _recommendations = list
           .map((m) => Movie.fromJson(m as Map<String, dynamic>))
           .toList();
-      _weights  = data['weights']   as Map<String, dynamic>?;
+      _weights   = data['weights']   as Map<String, dynamic>?;
       _fromCache = data['fromCache'] as bool? ?? false;
+      _isNewUser = data['isNewUser'] as bool? ?? false;
     } catch (e) {
       _error = e.toString();
     } finally {

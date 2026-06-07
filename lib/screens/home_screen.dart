@@ -252,35 +252,39 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                 child: Row(
                   children: [
-                    const Text(
-                      'AI 맞춤 추천',
-                      style: TextStyle(
+                    Text(
+                      rp.isNewUser ? '장르 기반 추천' : 'AI 맞춤 추천',
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 17,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(width: 8),
-                    if (rp.fromCache)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1A3A1A),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: Colors.green[700]!),
-                        ),
-                        child: Text(
-                          'CACHE HIT',
-                          style: TextStyle(
-                            color: Colors.green[400],
-                            fontSize: 10,
-                            fontFamily: 'monospace',
-                          ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: rp.isNewUser
+                            ? const Color(0xFF1A2A3A)
+                            : const Color(0xFF1A3A1A),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                          color: rp.isNewUser
+                              ? const Color(0xFF4FC3F7)
+                              : Colors.green[700]!,
                         ),
                       ),
+                      child: Text(
+                        rp.isNewUser ? '선호장르' : (rp.fromCache ? 'CACHED' : 'AI'),
+                        style: TextStyle(
+                          color: rp.isNewUser
+                              ? const Color(0xFF4FC3F7)
+                              : Colors.green[400],
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -292,12 +296,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 )
               else if (rp.recommendations.isEmpty)
-                const SizedBox(
+                SizedBox(
                   height: 120,
                   child: Center(
                     child: Text(
-                      '영화를 평가하면 맞춤 추천이 시작됩니다',
-                      style: TextStyle(color: Colors.grey),
+                      rp.isNewUser
+                          ? '선호 장르를 설정하면 추천이 시작됩니다'
+                          : '영화를 평가하면 AI 맞춤 추천이 시작됩니다',
+                      style: const TextStyle(color: Colors.grey),
                     ),
                   ),
                 )
