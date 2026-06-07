@@ -13,8 +13,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String _sortMode = '추천순'; // 추천순, 주간인기순, 월간인기순
-
   @override
   void initState() {
     super.initState();
@@ -24,25 +22,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadAll() async {
     final mp = context.read<MovieProvider>();
     final rp = context.read<RecommendationProvider>();
-    if (_sortMode == '추천순') {
-      await Future.wait([mp.loadGenres(), mp.loadMovies(), rp.loadRecommendations()]);
-    } else {
-      final period = _sortMode == '주간인기순' ? 'weekly' : 'monthly';
-      await Future.wait([mp.loadGenres(), mp.loadMovies(), mp.loadPopularMovies(period: period)]);
-    }
-  }
-
-  void _onSortChanged(String mode) {
-    if (mode == _sortMode) return;
-    setState(() => _sortMode = mode);
-    final mp = context.read<MovieProvider>();
-    final rp = context.read<RecommendationProvider>();
-    if (mode == '추천순') {
-      rp.loadRecommendations();
-    } else {
-      final period = mode == '주간인기순' ? 'weekly' : 'monthly';
-      mp.loadPopularMovies(period: period);
-    }
+    await Future.wait([
+      mp.loadGenres(),
+      mp.loadMovies(),
+      rp.loadRecommendations(),
+      mp.loadPopularMovies(period: 'weekly'),
+    ]);
   }
 
   @override
@@ -58,15 +43,11 @@ class _HomeScreenState extends State<HomeScreen> {
             slivers: [
               _buildAppBar(),
               _buildSearchBar(),
-              _buildSortTabs(),
-              if (_sortMode == '추천순') ...[
-                _buildGenreFilter(),
-                _buildHeroSpotlight(),
-                _buildRecommendationSection(),
-                _buildAllMoviesSection(),
-              ] else ...[
-                _buildPopularSection(),
-              ],
+              _buildGenreFilter(),
+              _buildHeroSpotlight(),
+              _buildRecommendationSection(),
+              _buildPopularSection(),
+              _buildAllMoviesSection(),
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
             ],
           ),
@@ -121,45 +102,6 @@ class _HomeScreenState extends State<HomeScreen> {
               Text('영화 검색...', style: TextStyle(color: Colors.grey[500])),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSortTabs() {
-    const modes = ['추천순', '주간인기순', '월간인기순'];
-    return SliverToBoxAdapter(
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1A1608),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          children: modes.map((mode) {
-            final selected = _sortMode == mode;
-            return Expanded(
-              child: GestureDetector(
-                onTap: () => _onSortChanged(mode),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  decoration: BoxDecoration(
-                    color: selected ? const Color(0xFFF59E0B) : Colors.transparent,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    mode,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: selected ? Colors.white : Colors.grey[400],
-                      fontSize: 13,
-                      fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
         ),
       ),
     );
@@ -453,20 +395,11 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (_, mp, __) {
           if (mp.popularLoading) {
             return const SizedBox(
-              height: 300,
-              child: Center(
-                child: CircularProgressIndicator(color: Color(0xFFF59E0B)),
-              ),
-            );
-          }
-          if (mp.popularMovies.isEmpty) {
-            return const SizedBox(
               height: 200,
-              child: Center(
-                child: Text('인기 영화 데이터가 없습니다', style: TextStyle(color: Colors.grey)),
-              ),
+              child: Center(child: CircularProgressIndicator(color: Color(0xFFF59E0B))),
             );
           }
+          if (mp.popularMovies.isEmpty) return const SizedBox.shrink();
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -474,62 +407,61 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
                 child: Row(
                   children: [
-                    Text(
-                      _sortMode,
-                      style: const TextStyle(
+                    const Text(
+                      '실시간 인기 순위',
+                      style: TextStyle(
                         color: Colors.white,
                         fontSize: 17,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+                    const Spacer(),
+                    _buildPeriodChip(mp, 'weekly', '주간'),
                     const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF251E08),
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.6)),
-                      ),
-                      child: Text(
-                        _sortMode == '주간인기순' ? '7일' : '30일',
-                        style: const TextStyle(
-                          color: Color(0xFFF59E0B),
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+                    _buildPeriodChip(mp, 'monthly', '월간'),
                   ],
                 ),
               ),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  childAspectRatio: 0.55,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 16,
+              SizedBox(
+                height: 230,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: mp.popularMovies.length,
+                  itemBuilder: (_, i) {
+                    final movie = mp.popularMovies[i];
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 10),
+                      child: MovieCard(
+                        movie: movie,
+                        onTap: () => Navigator.pushNamed(context, '/movie', arguments: movie),
+                      ),
+                    );
+                  },
                 ),
-                itemCount: mp.popularMovies.length,
-                itemBuilder: (_, i) {
-                  final movie = mp.popularMovies[i];
-                  return MovieCard(
-                    movie: movie,
-                    width: double.infinity,
-                    height: 160,
-                    onTap: () => Navigator.pushNamed(
-                      context,
-                      '/movie',
-                      arguments: movie,
-                    ),
-                  );
-                },
               ),
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildPeriodChip(MovieProvider mp, String period, String label) {
+    final isSelected = mp.popularPeriod == period;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => mp.loadPopularMovies(period: period),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? const Color(0xFFF59E0B) : Colors.grey[600],
+            fontSize: 13,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
       ),
     );
   }
