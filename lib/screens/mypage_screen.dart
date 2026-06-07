@@ -20,8 +20,10 @@ class _MypageScreenState extends State<MypageScreen> {
 
   List<RatingItem>           _ratings = [];
   List<Map<String, dynamic>> _history = [];
+  Map<String, dynamic>?      _stats;
   bool       _ratingsLoading = true;
   bool       _historyLoading = true;
+  bool       _statsLoading   = true;
   Uint8List? _pickedImageBytes;
 
   @override
@@ -31,7 +33,17 @@ class _MypageScreenState extends State<MypageScreen> {
       context.read<AuthProvider>().refreshProfile();
       _loadRatings();
       _loadHistory();
+      _loadStats();
     });
+  }
+
+  Future<void> _loadStats() async {
+    try {
+      final data = await _api.get('/mypage/stats') as Map<String, dynamic>;
+      if (mounted) setState(() { _stats = data; _statsLoading = false; });
+    } catch (_) {
+      if (mounted) setState(() => _statsLoading = false);
+    }
   }
 
   Future<void> _loadRatings() async {
@@ -251,6 +263,8 @@ class _MypageScreenState extends State<MypageScreen> {
           children: [
             if (user != null) _buildProfile(user),
             const SizedBox(height: 8),
+            _buildStatsCard(),
+            const SizedBox(height: 8),
             _buildSectionHeader('내 리뷰', '${_ratings.length}편'),
             _buildRatingsSection(),
             const SizedBox(height: 8),
@@ -362,6 +376,137 @@ class _MypageScreenState extends State<MypageScreen> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(label, style: TextStyle(color: Colors.grey[300], fontSize: 11)),
+    );
+  }
+
+  Widget _buildStatsCard() {
+    if (_statsLoading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 16),
+        child: Center(child: CircularProgressIndicator(color: Color(0xFFE50914))),
+      );
+    }
+    final s = _stats;
+    if (s == null || (s['totalRatings'] as int? ?? 0) == 0) {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E1E1E),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.bar_chart, color: Color(0xFF7C83FD), size: 28),
+            const SizedBox(width: 12),
+            Text('영화를 평가하면 통계가 쌓입니다',
+                style: TextStyle(color: Colors.grey[500], fontSize: 13)),
+          ],
+        ),
+      );
+    }
+
+    final total     = s['totalRatings']    as int;
+    final avg       = (s['avgRatingGiven'] as num?)?.toDouble() ?? 0.0;
+    final genres    = (s['genreDistribution'] as List<dynamic>? ?? []);
+    final maxGenre  = genres.isNotEmpty
+        ? (genres.map((g) => g['count'] as int).reduce((a, b) => a > b ? a : b))
+        : 1;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1E1E),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF2A2A4A)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            const Icon(Icons.bar_chart, color: Color(0xFF7C83FD), size: 18),
+            const SizedBox(width: 8),
+            const Text('내 통계', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+          ]),
+          const SizedBox(height: 16),
+          // 평균 평점 + 평가수
+          Row(children: [
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2A2A2A),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Column(children: [
+                  Text(avg.toStringAsFixed(1),
+                      style: const TextStyle(color: Color(0xFFFFD700), fontSize: 28, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Row(mainAxisAlignment: MainAxisAlignment.center, children: List.generate(5, (i) {
+                    return Icon(
+                      i < avg.floor() ? Icons.star : (i < avg ? Icons.star_half : Icons.star_border),
+                      color: const Color(0xFFFFD700), size: 14);
+                  })),
+                  const SizedBox(height: 4),
+                  Text('평균 평점', style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+                ]),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2A2A2A),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Column(children: [
+                  Text('$total', style: const TextStyle(color: Color(0xFFE50914), fontSize: 28, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  const Icon(Icons.movie_outlined, color: Color(0xFFE50914), size: 16),
+                  const SizedBox(height: 4),
+                  Text('평가한 영화', style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+                ]),
+              ),
+            ),
+          ]),
+          if (genres.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            const Text('선호 장르', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 10),
+            ...genres.take(5).map((g) {
+              final name  = g['genre'] as String;
+              final count = g['count'] as int;
+              final ratio = count / maxGenre;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(children: [
+                  SizedBox(
+                    width: 72,
+                    child: Text(name, style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                        overflow: TextOverflow.ellipsis),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: ratio,
+                        minHeight: 8,
+                        backgroundColor: const Color(0xFF2A2A2A),
+                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF7C83FD)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text('$count편', style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+                ]),
+              );
+            }),
+          ],
+        ],
+      ),
     );
   }
 
