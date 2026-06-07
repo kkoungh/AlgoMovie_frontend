@@ -15,7 +15,7 @@ class MovieCard extends StatelessWidget {
     this.onTap,
     this.onFeedback,
     this.width = 140,
-    this.height = 210,
+    this.height = 180, // 🌟 [수정] 기본 포스터 이미지 높이를 210에서 180으로 줄여서 텍스트 공간(20~30px)을 확보합니다.
   });
 
   @override
@@ -39,6 +39,7 @@ class MovieCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 6),
+            // 🌟 [유지 및 안전장치] 제목 영역이 부모의 남은 세로 공간에 딱 맞춰 크기를 조절하도록 유지합니다.
             Flexible(
               child: Text(
                 movie.title,
@@ -51,6 +52,7 @@ class MovieCard extends StatelessWidget {
                 ),
               ),
             ),
+            const SizedBox(height: 2), // 🌟 [추가] 제목과 출시일 사이 간격 미세 조정
             if (movie.releaseYear != null)
               Text(
                 '${movie.releaseYear}',
@@ -96,8 +98,8 @@ class MovieCard extends StatelessWidget {
         color: const Color(0xFF252010),
         child: const Icon(Icons.broken_image, color: Colors.grey, size: 40),
       ),
-    );
-  }
+    ); // ⚡ 소괄호와 세미콜론으로 CachedNetworkImage를 완전히 닫아줍니다.
+  } // ⚡ 마지막 중괄호로 _buildPoster() 함수를 완전히 닫아줍니다.
 
   Widget _buildFeedbackButtons() {
     return Positioned(

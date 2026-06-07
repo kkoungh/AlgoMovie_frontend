@@ -16,8 +16,10 @@ class MovieProvider extends ChangeNotifier {
   bool _popularLoading = false;
   String? _error;
   Movie? _currentMovie;
-  int _wishlistRevision = 0;
+
   int _ratingRevision = 0;
+  int _wishlistRevision = 0;
+  String _popularPeriod = 'weekly';
 
   List<Movie>  get movies          => _movies;
   List<Movie>  get searchResults   => _searchResults;
@@ -31,6 +33,7 @@ class MovieProvider extends ChangeNotifier {
   Movie?       get currentMovie    => _currentMovie;
   int          get wishlistRevision => _wishlistRevision;
   int          get ratingRevision  => _ratingRevision;
+  String       get popularPeriod   => _popularPeriod;
 
   Future<void> loadGenres() async {
     try {
@@ -47,17 +50,12 @@ class MovieProvider extends ChangeNotifier {
     notifyListeners();
     try {
       final params = <String>[];
-      if (genre != null && genre != '전체') {
-        params.add('genre=${Uri.encodeComponent(genre)}');
-      }
-      if (country != null) {
-        params.add('country=${Uri.encodeComponent(country)}');
-      }
+      if (genre != null && genre != '전체') params.add('genre=${Uri.encodeComponent(genre)}');
+      if (country != null) params.add('country=${Uri.encodeComponent(country)}');
       final path = params.isEmpty ? '/movies' : '/movies?${params.join('&')}';
       final data = await _api.get(path) as Map<String, dynamic>;
       final list = data['movies'] as List<dynamic>;
-      _movies =
-          list.map((m) => Movie.fromJson(m as Map<String, dynamic>)).toList();
+      _movies = list.map((m) => Movie.fromJson(m as Map<String, dynamic>)).toList();
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -67,6 +65,7 @@ class MovieProvider extends ChangeNotifier {
   }
 
   Future<void> loadPopularMovies({String period = 'weekly'}) async {
+    _popularPeriod = period; // 🌟 [추가] 현재 선택된 기간(weekly, monthly 등)을 저장합니다.
     _popularLoading = true;
     notifyListeners();
     try {
@@ -95,12 +94,9 @@ class MovieProvider extends ChangeNotifier {
     _searchLoading = true;
     notifyListeners();
     try {
-      final data =
-          await _api.get('/movies/search?q=${Uri.encodeComponent(query)}')
-              as Map<String, dynamic>;
+      final data = await _api.get('/movies/search?q=${Uri.encodeComponent(query)}') as Map<String, dynamic>;
       final list = data['movies'] as List<dynamic>;
-      _searchResults =
-          list.map((m) => Movie.fromJson(m as Map<String, dynamic>)).toList();
+      _searchResults = list.map((m) => Movie.fromJson(m as Map<String, dynamic>)).toList();
     } catch (_) {
       _searchResults = [];
     } finally {
@@ -122,12 +118,9 @@ class MovieProvider extends ChangeNotifier {
 
   Future<List<Movie>> loadSimilarMovies(int movieId) async {
     try {
-      final data =
-          await _api.get('/movies/$movieId/similar') as Map<String, dynamic>;
+      final data = await _api.get('/movies/$movieId/similar') as Map<String, dynamic>;
       final list = data['movies'] as List<dynamic>;
-      return list
-          .map((m) => Movie.fromJson(m as Map<String, dynamic>))
-          .toList();
+      return list.map((m) => Movie.fromJson(m as Map<String, dynamic>)).toList();
     } catch (_) {
       return [];
     }
@@ -137,11 +130,14 @@ class MovieProvider extends ChangeNotifier {
     try {
       await _api.post('/ratings', {
         'movieId': movieId,
-        'score': score,
+        'score':   score,
         if (review != null && review.isNotEmpty) 'review': review,
       });
+      
+      // 🌟 [추가] 평점 등록 성공 시 리비전 값을 올려 마이페이지가 알게 함
       _ratingRevision++;
       notifyListeners();
+      
       return true;
     } catch (_) {
       return false;
@@ -152,7 +148,7 @@ class MovieProvider extends ChangeNotifier {
     try {
       await _api.post('/feedback', {
         'movieId': movieId,
-        'type': type,
+        'type':    type,
       });
       return true;
     } catch (_) {
@@ -163,8 +159,11 @@ class MovieProvider extends ChangeNotifier {
   Future<bool> toggleWishlist(int movieId) async {
     try {
       await _api.post('/wishlist/$movieId', {});
+      
+      // 🌟 [추가] 찜하기 토글 성공 시 리비전 값을 올려 위시리스트가 알게 함
       _wishlistRevision++;
       notifyListeners();
+      
       return true;
     } catch (_) {
       return false;
@@ -176,8 +175,7 @@ class MovieProvider extends ChangeNotifier {
       final data = await _api.get('/mypage/wishlist') as Map<String, dynamic>;
       final list = data['wishlist'] as List<dynamic>;
       return list
-          .map((e) => int.parse(
-              (e as Map<String, dynamic>)['movie']['movieId'].toString()))
+          .map((e) => int.parse((e as Map<String, dynamic>)['movie']['movieId'].toString()))
           .toSet();
     } catch (_) {
       return {};
