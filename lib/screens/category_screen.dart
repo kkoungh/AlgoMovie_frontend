@@ -146,20 +146,27 @@ class _CategoryScreenState extends State<CategoryScreen> {
             ),
           );
         }
-        return GridView.builder(
-          padding: const EdgeInsets.all(8),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
-            childAspectRatio: 0.58,
-          ),
-          itemCount: mp.movies.length,
-          itemBuilder: (_, i) {
-            final movie = mp.movies[i];
-            return GestureDetector(
-              onTap: () => Navigator.pushNamed(context, '/movie', arguments: movie),
-              child: _MovieItem(movie: movie),
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            // 너비 140px 당 아이템 1개가 들어가도록 계산 (최소 2개, 최대 8개로 제한)
+            int crossAxisCount = (constraints.maxWidth / 140).floor().clamp(2, 8);
+            
+            return GridView.builder(
+              padding: const EdgeInsets.all(8),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount,
+                mainAxisSpacing: 8,
+                crossAxisSpacing: 8,
+                childAspectRatio: 0.58,
+              ),
+              itemCount: mp.movies.length,
+              itemBuilder: (_, i) {
+                final movie = mp.movies[i];
+                return GestureDetector(
+                  onTap: () => Navigator.pushNamed(context, '/movie', arguments: movie),
+                  child: _MovieItem(movie: movie),
+                );
+              },
             );
           },
         );
