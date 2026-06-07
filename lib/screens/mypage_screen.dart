@@ -578,6 +578,12 @@ class _MypageScreenState extends State<MypageScreen> {
                             );
                           }),
                         ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _formatDate(r.createdAt),
+                          style:
+                              TextStyle(color: Colors.grey[500], fontSize: 11),
+                        ),
                         if (r.review != null && r.review!.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(top: 4),
@@ -746,6 +752,13 @@ class _MypageScreenState extends State<MypageScreen> {
         },
       ),
     );
+  }
+
+  String _formatDate(DateTime dt) {
+    final local = dt.toLocal();
+    final month = local.month.toString().padLeft(2, '0');
+    final day = local.day.toString().padLeft(2, '0');
+    return '${local.year}.$month.$day';
   }
 
   Widget _historyPlaceholder() => Container(

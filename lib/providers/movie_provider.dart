@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../services/api_service.dart';
 import '../models/movie.dart';
+import '../models/rating.dart';
 
 class MovieProvider extends ChangeNotifier {
   final _api = ApiService();
@@ -161,6 +162,18 @@ class MovieProvider extends ChangeNotifier {
           .toSet();
     } catch (_) {
       return {};
+    }
+  }
+
+  Future<List<RatingItem>> fetchMyRatings() async {
+    try {
+      final data = await _api.get('/mypage/reviews') as Map<String, dynamic>;
+      final list = data['reviews'] as List<dynamic>;
+      return list
+          .map((r) => RatingItem.fromJson(r as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      return [];
     }
   }
 

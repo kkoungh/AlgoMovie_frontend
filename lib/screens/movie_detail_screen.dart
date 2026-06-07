@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../providers/movie_provider.dart';
 import '../providers/recommendation_provider.dart';
 import '../models/movie.dart';
+import '../models/rating.dart';
 import '../widgets/star_rating.dart';
 import '../widgets/movie_card.dart';
 
@@ -20,6 +21,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   double _userRating = 0;
   final _reviewCtrl = TextEditingController();
   bool _ratingSubmitted = false;
+  RatingItem? _myRating;
+  bool _myRatingLoading = true;
   bool _inWishlist = false;
   bool _wishlistLoading = false;
 
@@ -34,6 +37,9 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   }
 
   Future<void> _loadDetail(int id) async {
+    if (mounted) {
+      setState(() => _myRatingLoading = true);
+    }
     final mp = context.read<MovieProvider>();
     final detail = await mp.loadMovieDetail(id);
     final similar = await mp.loadSimilarMovies(id);
@@ -44,6 +50,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       });
     }
     _checkWishlist(id);
+    _checkMyRating(id);
   }
 
   Future<void> _checkWishlist(int movieId) async {
@@ -57,7 +64,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   Future<void> _toggleWishlist() async {
     if (_wishlistLoading) return;
     setState(() => _wishlistLoading = true);
-    final ok = await context.read<MovieProvider>().toggleWishlist(_movie!.movieId);
+    final ok =
+        await context.read<MovieProvider>().toggleWishlist(_movie!.movieId);
     if (mounted) {
       setState(() {
         if (ok) _inWishlist = !_inWishlist;
@@ -71,6 +79,31 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     }
   }
 
+  Future<void> _checkMyRating(int movieId) async {
+    final ratings = await context.read<MovieProvider>().fetchMyRatings();
+    RatingItem? rating;
+    for (final item in ratings) {
+      if (item.movie.movieId == movieId) {
+        rating = item;
+        break;
+      }
+    }
+    if (!mounted) return;
+    setState(() {
+      _myRating = rating;
+      if (rating != null) {
+        _userRating = rating.score;
+        _reviewCtrl.text = rating.review ?? '';
+        _ratingSubmitted = true;
+      } else {
+        _userRating = 0;
+        _reviewCtrl.clear();
+        _ratingSubmitted = false;
+      }
+      _myRatingLoading = false;
+    });
+  }
+
   @override
   void dispose() {
     _reviewCtrl.dispose();
@@ -78,21 +111,27 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   }
 
   Future<void> _submitRating() async {
-    if (_userRating == 0) return;
-    final ok = await context.read<MovieProvider>().rateMovie(
-          _movie!.movieId,
-          _userRating,
-          review: _reviewCtrl.text.trim(),
-        );
+    if (_userRating == 0 || _myRating != null || _myRatingLoading) return;
+    final movieProvider = context.read<MovieProvider>();
+    final recommendationProvider = context.read<RecommendationProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+    final movieId = _movie!.movieId;
+
+    final ok = await movieProvider.rateMovie(
+      movieId,
+      _userRating,
+      review: _reviewCtrl.text.trim(),
+    );
     if (ok && mounted) {
-      setState(() => _ratingSubmitted = true);
-      ScaffoldMessenger.of(context).showSnackBar(
+      await _checkMyRating(movieId);
+      if (!mounted) return;
+      messenger.showSnackBar(
         const SnackBar(
           content: Text('평가가 저장되었습니다'),
           backgroundColor: Color(0xFF4CAF50),
         ),
       );
-      context.read<RecommendationProvider>().loadRecommendations();
+      recommendationProvider.loadRecommendations();
     }
   }
 
@@ -176,8 +215,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
             ? const Padding(
                 padding: EdgeInsets.all(12),
                 child: SizedBox(
-                  width: 20, height: 20,
-                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                      color: Colors.white, strokeWidth: 2),
                 ),
               )
             : IconButton(
@@ -299,6 +340,97 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   }
 
   Widget _buildRatingSection() {
+    if (_myRatingLoading) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: CircularProgressIndicator(color: Color(0xFFE50914)),
+        ),
+      );
+    }
+
+    if (_myRating != null) {
+      final rating = _myRating!;
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E1E1E),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFF2A2A2A)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Text(
+                  '내 평점',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  _formatDate(rating.createdAt),
+                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Row(
+                  children: List.generate(5, (j) {
+                    final full = j < rating.score.floor();
+                    final half = !full && j < rating.score;
+                    return Icon(
+                      full
+                          ? Icons.star
+                          : half
+                              ? Icons.star_half
+                              : Icons.star_border,
+                      color: const Color(0xFFFFD700),
+                      size: 20,
+                    );
+                  }),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  rating.score.toStringAsFixed(1),
+                  style: const TextStyle(
+                    color: Color(0xFFFFD700),
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            if (rating.review != null && rating.review!.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2A2A2A),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  rating.review!,
+                  style: TextStyle(
+                    color: Colors.grey[300],
+                    fontSize: 13,
+                    height: 1.5,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      );
+    }
+
     if (_ratingSubmitted) {
       return Container(
         padding: const EdgeInsets.all(16),
@@ -382,6 +514,13 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     );
   }
 
+  String _formatDate(DateTime dt) {
+    final local = dt.toLocal();
+    final month = local.month.toString().padLeft(2, '0');
+    final day = local.day.toString().padLeft(2, '0');
+    return '${local.year}.$month.$day';
+  }
+
   Widget _buildSimilarSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -405,8 +544,11 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
               onTap: () {
                 setState(() {
                   _movie = _similar[i];
+                  _myRating = null;
+                  _myRatingLoading = true;
                   _ratingSubmitted = false;
                   _userRating = 0;
+                  _reviewCtrl.clear();
                 });
                 _loadDetail(_similar[i].movieId);
               },
