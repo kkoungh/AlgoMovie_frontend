@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../services/api_service.dart';
 import '../models/movie.dart';
-import '../providers/movie_provider.dart';
 
 class WishlistScreen extends StatefulWidget {
   const WishlistScreen({super.key});
@@ -17,7 +15,6 @@ class _WishlistScreenState extends State<WishlistScreen> {
   // {addedAt: DateTime, movie: Movie}
   List<Map<String, dynamic>> _items = [];
   bool _loading = true;
-  int? _lastWishlistRevision;
 
   @override
   void initState() {
@@ -25,57 +22,32 @@ class _WishlistScreenState extends State<WishlistScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final revision = context.watch<MovieProvider>().wishlistRevision;
-    if (_lastWishlistRevision != null && revision != _lastWishlistRevision) {
-      WidgetsBinding.instance
-          .addPostFrameCallback((_) => _load(showLoading: false));
-    }
-    _lastWishlistRevision = revision;
-  }
-
-  Future<void> _load({bool showLoading = true}) async {
+  Future<void> _load() async {
     if (!mounted) return;
-    if (showLoading) setState(() => _loading = true);
+    setState(() => _loading = true);
     try {
       final data = await _api.get('/mypage/wishlist') as Map<String, dynamic>;
       final list = data['wishlist'] as List<dynamic>;
       final items = list.map((item) {
         final map = item as Map<String, dynamic>;
         return {
-          'addedAt': DateTime.tryParse(map['addedAt']?.toString() ?? '') ??
-              DateTime.now(),
-          'movie': Movie.fromJson(map['movie'] as Map<String, dynamic>),
+          'addedAt': DateTime.tryParse(map['addedAt']?.toString() ?? '') ?? DateTime.now(),
+          'movie':   Movie.fromJson(map['movie'] as Map<String, dynamic>),
         };
       }).toList();
       // 최근 추가한 순 정렬
-      items.sort((a, b) =>
-          (b['addedAt'] as DateTime).compareTo(a['addedAt'] as DateTime));
-      if (mounted) {
-        setState(() {
-          _items = items;
-          _loading = false;
-        });
-      }
+      items.sort((a, b) => (b['addedAt'] as DateTime).compareTo(a['addedAt'] as DateTime));
+      if (mounted) setState(() { _items = items; _loading = false; });
     } catch (_) {
-      if (mounted) {
-        setState(() => _loading = false);
-      }
+      if (mounted) setState(() => _loading = false);
     }
   }
 
   Future<void> _remove(Movie movie) async {
     try {
-      final ok =
-          await context.read<MovieProvider>().toggleWishlist(movie.movieId);
-      if (!ok) {
-        return;
-      }
+      await _api.post('/wishlist/${movie.movieId}', {});
       if (mounted) {
-        setState(() => _items.removeWhere(
-            (e) => (e['movie'] as Movie).movieId == movie.movieId));
+        setState(() => _items.removeWhere((e) => (e['movie'] as Movie).movieId == movie.movieId));
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${movie.title} 위시리스트에서 제거됨'),
@@ -121,10 +93,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text('위시리스트',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold)),
+                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
             if (!_loading && _items.isNotEmpty)
               Text('${_items.length}편 · 최근 추가순',
                   style: TextStyle(color: Colors.grey[500], fontSize: 11)),
@@ -132,8 +101,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
         ),
       ),
       body: _loading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFFE50914)))
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFFE50914)))
           : RefreshIndicator(
               color: const Color(0xFFE50914),
               backgroundColor: const Color(0xFF1E1E1E),
@@ -152,7 +120,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.favorite_border, color: Colors.grey[700], size: 72),
+                Icon(Icons.bookmark_border, color: Colors.grey[700], size: 72),
                 const SizedBox(height: 16),
                 Text('위시리스트가 비어있습니다',
                     style: TextStyle(color: Colors.grey[400], fontSize: 16)),
@@ -169,12 +137,12 @@ class _WishlistScreenState extends State<WishlistScreen> {
 
   Widget _buildGrid() {
     return GridView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 0.52,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+        childAspectRatio: 0.60, // 비율을 0.52에서 0.60으로 높여서 세로 길이를 최적화
       ),
       itemCount: _items.length,
       itemBuilder: (_, i) {
@@ -203,10 +171,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
               const SizedBox(height: 4),
               Text(
                 movie.title,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500),
+                style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -223,8 +188,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
 
   Widget _placeholder() => Container(
         color: const Color(0xFF2A2A2A),
-        child: const Center(
-            child: Icon(Icons.movie, color: Colors.grey, size: 28)),
+        child: const Center(child: Icon(Icons.movie, color: Colors.grey, size: 28)),
       );
 
   String _dateLabel(DateTime dt) {
@@ -232,7 +196,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
     final diff = now.difference(dt);
     if (diff.inDays == 0) return '오늘';
     if (diff.inDays == 1) return '어제';
-    if (diff.inDays < 7) return '${diff.inDays}일 전';
+    if (diff.inDays < 7)  return '${diff.inDays}일 전';
     if (diff.inDays < 30) return '${(diff.inDays / 7).floor()}주 전';
     return '${dt.month}월 ${dt.day}일';
   }

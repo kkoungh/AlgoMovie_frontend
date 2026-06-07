@@ -292,13 +292,13 @@ class _MypageScreenState extends State<MypageScreen> {
         child: ListView(
           children: [
             if (user != null) _buildProfile(user),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4), // 섹션 간 간격 축소
             _buildRatingsHeader(),
             _buildRatingsSection(),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             _buildSectionHeader('최근 본 영화', ''),
             _buildHistorySection(),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             _buildDangerZone(),
             const SizedBox(height: 40),
           ],
@@ -686,7 +686,7 @@ class _MypageScreenState extends State<MypageScreen> {
       );
     }
     return SizedBox(
-      height: 180,
+      height: 170, // 가로 리스트 높이를 줄여서 포스터와 텍스트 사이의 유격을 최적화
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),

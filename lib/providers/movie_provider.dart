@@ -16,6 +16,12 @@ class MovieProvider extends ChangeNotifier {
   String? _error;
   Movie? _currentMovie;
 
+  // 🌟 [추가] 화면 새로고침 감지용 내부 변수 선언
+  int _ratingRevision = 0;
+  int _wishlistRevision = 0;
+
+  String _popularPeriod = 'weekly';
+
   List<Movie>  get movies         => _movies;
   List<Movie>  get searchResults  => _searchResults;
   List<Movie>  get popularMovies  => _popularMovies;
@@ -26,6 +32,12 @@ class MovieProvider extends ChangeNotifier {
   bool         get popularLoading => _popularLoading;
   String?      get error          => _error;
   Movie?       get currentMovie   => _currentMovie;
+
+  // 🌟 [추가] 외부 화면(Mypage, Wishlist)에서 접근할 Getter 선언
+  int get ratingRevision => _ratingRevision;
+  int get wishlistRevision => _wishlistRevision;
+
+  String get popularPeriod => _popularPeriod;
 
   Future<void> loadGenres() async {
     try {
@@ -57,6 +69,7 @@ class MovieProvider extends ChangeNotifier {
   }
 
   Future<void> loadPopularMovies({String period = 'weekly'}) async {
+    _popularPeriod = period; // 🌟 [추가] 현재 선택된 기간(weekly, monthly 등)을 저장합니다.
     _popularLoading = true;
     notifyListeners();
     try {
@@ -124,6 +137,11 @@ class MovieProvider extends ChangeNotifier {
         'score':   score,
         if (review != null && review.isNotEmpty) 'review': review,
       });
+      
+      // 🌟 [추가] 평점 등록 성공 시 리비전 값을 올려 마이페이지가 알게 함
+      _ratingRevision++;
+      notifyListeners();
+      
       return true;
     } catch (_) {
       return false;
@@ -145,6 +163,11 @@ class MovieProvider extends ChangeNotifier {
   Future<bool> toggleWishlist(int movieId) async {
     try {
       await _api.post('/wishlist/$movieId', {});
+      
+      // 🌟 [추가] 찜하기 토글 성공 시 리비전 값을 올려 위시리스트가 알게 함
+      _wishlistRevision++;
+      notifyListeners();
+      
       return true;
     } catch (_) {
       return false;
