@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/movie_provider.dart';
 import '../services/api_service.dart';
 import '../models/rating.dart';
 import '../models/movie.dart';
@@ -18,11 +19,14 @@ class MypageScreen extends StatefulWidget {
 class _MypageScreenState extends State<MypageScreen> {
   final _api = ApiService();
 
-  List<RatingItem>           _ratings = [];
+  List<RatingItem> _ratings = [];
   List<Map<String, dynamic>> _history = [];
-  bool       _ratingsLoading = true;
-  bool       _historyLoading = true;
+  bool _ratingsLoading = true;
+  bool _historyLoading = true;
   Uint8List? _pickedImageBytes;
+  int _ratingPageSize = 5;
+  int _ratingPageIndex = 0;
+  int? _lastRatingRevision;
 
   @override
   void initState() {
@@ -34,13 +38,34 @@ class _MypageScreenState extends State<MypageScreen> {
     });
   }
 
-  Future<void> _loadRatings() async {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final revision = context.watch<MovieProvider>().ratingRevision;
+    if (_lastRatingRevision != null && revision != _lastRatingRevision) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await Future.wait([
+          context.read<AuthProvider>().refreshProfile(),
+          _loadRatings(showLoading: false),
+        ]);
+      });
+    }
+    _lastRatingRevision = revision;
+  }
+
+  Future<void> _loadRatings({bool showLoading = true}) async {
+    if (showLoading && mounted) {
+      setState(() => _ratingsLoading = true);
+    }
     try {
       final data = await _api.get('/mypage/reviews') as Map<String, dynamic>;
       final list = data['reviews'] as List<dynamic>;
       if (mounted) {
         setState(() {
-          _ratings = list.map((r) => RatingItem.fromJson(r as Map<String, dynamic>)).toList();
+          _ratings = list
+              .map((r) => RatingItem.fromJson(r as Map<String, dynamic>))
+              .toList();
+          _clampRatingPage();
           _ratingsLoading = false;
         });
       }
@@ -102,24 +127,34 @@ class _MypageScreenState extends State<MypageScreen> {
                       backgroundImage: dialogBytes != null
                           ? MemoryImage(dialogBytes!)
                           : (user.profileImageUrl != null
-                              ? NetworkImage(user.profileImageUrl!) as ImageProvider
+                              ? NetworkImage(user.profileImageUrl!)
+                                  as ImageProvider
                               : null),
-                      child: (dialogBytes == null && user.profileImageUrl == null)
-                          ? Text(user.nickname.isNotEmpty ? user.nickname[0].toUpperCase() : '?',
-                              style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold))
-                          : null,
+                      child:
+                          (dialogBytes == null && user.profileImageUrl == null)
+                              ? Text(
+                                  user.nickname.isNotEmpty
+                                      ? user.nickname[0].toUpperCase()
+                                      : '?',
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold))
+                              : null,
                     ),
                     Container(
                       padding: const EdgeInsets.all(5),
                       decoration: const BoxDecoration(
-                        color: Color(0xFFE50914), shape: BoxShape.circle),
-                      child: const Icon(Icons.camera_alt, color: Colors.white, size: 14),
+                          color: Color(0xFFE50914), shape: BoxShape.circle),
+                      child: const Icon(Icons.camera_alt,
+                          color: Colors.white, size: 14),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 6),
-              Text('탭하여 사진 선택', style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+              Text('탭하여 사진 선택',
+                  style: TextStyle(color: Colors.grey[500], fontSize: 11)),
               const SizedBox(height: 16),
               TextField(
                 controller: nicknameCtrl,
@@ -161,7 +196,8 @@ class _MypageScreenState extends State<MypageScreen> {
                   }
                 } catch (_) {}
               },
-              child: const Text('저장', style: TextStyle(color: Color(0xFFE50914))),
+              child:
+                  const Text('저장', style: TextStyle(color: Color(0xFFE50914))),
             ),
           ],
         ),
@@ -175,7 +211,8 @@ class _MypageScreenState extends State<MypageScreen> {
       builder: (_) => AlertDialog(
         backgroundColor: const Color(0xFF1E1E1E),
         title: const Text('로그아웃', style: TextStyle(color: Colors.white)),
-        content: Text('로그아웃 하시겠습니까?', style: TextStyle(color: Colors.grey[400])),
+        content:
+            Text('로그아웃 하시겠습니까?', style: TextStyle(color: Colors.grey[400])),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -183,7 +220,8 @@ class _MypageScreenState extends State<MypageScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('로그아웃', style: TextStyle(color: Color(0xFFE50914))),
+            child:
+                const Text('로그아웃', style: TextStyle(color: Color(0xFFE50914))),
           ),
         ],
       ),
@@ -208,7 +246,8 @@ class _MypageScreenState extends State<MypageScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('탈퇴하기', style: TextStyle(color: Color(0xFFE50914))),
+            child:
+                const Text('탈퇴하기', style: TextStyle(color: Color(0xFFE50914))),
           ),
         ],
       ),
@@ -229,7 +268,10 @@ class _MypageScreenState extends State<MypageScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF121212),
         title: const Text('마이페이지',
-            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+            style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.white),
@@ -251,7 +293,7 @@ class _MypageScreenState extends State<MypageScreen> {
           children: [
             if (user != null) _buildProfile(user),
             const SizedBox(height: 8),
-            _buildSectionHeader('내 리뷰', '${_ratings.length}편'),
+            _buildRatingsHeader(),
             _buildRatingsSection(),
             const SizedBox(height: 8),
             _buildSectionHeader('최근 본 영화', ''),
@@ -281,13 +323,18 @@ class _MypageScreenState extends State<MypageScreen> {
                     : (user.profileImageUrl != null
                         ? NetworkImage(user.profileImageUrl!)
                         : null),
-                child: (_pickedImageBytes == null && user.profileImageUrl == null)
-                    ? Text(
-                        user.nickname.isNotEmpty ? user.nickname[0].toUpperCase() : '?',
-                        style: const TextStyle(
-                            color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-                      )
-                    : null,
+                child:
+                    (_pickedImageBytes == null && user.profileImageUrl == null)
+                        ? Text(
+                            user.nickname.isNotEmpty
+                                ? user.nickname[0].toUpperCase()
+                                : '?',
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold),
+                          )
+                        : null,
               ),
               Positioned(
                 right: 0,
@@ -300,7 +347,8 @@ class _MypageScreenState extends State<MypageScreen> {
                       color: Color(0xFFE50914),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.camera_alt, color: Colors.white, size: 14),
+                    child: const Icon(Icons.camera_alt,
+                        color: Colors.white, size: 14),
                   ),
                 ),
               ),
@@ -316,24 +364,29 @@ class _MypageScreenState extends State<MypageScreen> {
                     Expanded(
                       child: Text(user.nickname,
                           style: const TextStyle(
-                              color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold)),
                     ),
                     GestureDetector(
                       onTap: _editProfile,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                           color: const Color(0xFF2A2A2A),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Text('편집',
-                            style: TextStyle(color: Color(0xFFE50914), fontSize: 12)),
+                            style: TextStyle(
+                                color: Color(0xFFE50914), fontSize: 12)),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text(user.email, style: TextStyle(color: Colors.grey[500], fontSize: 13)),
+                Text(user.email,
+                    style: TextStyle(color: Colors.grey[500], fontSize: 13)),
                 const SizedBox(height: 10),
                 Row(
                   children: [
@@ -341,7 +394,10 @@ class _MypageScreenState extends State<MypageScreen> {
                     const SizedBox(width: 8),
                     _statChip(
                       user.preferredGenres.isNotEmpty
-                          ? user.preferredGenres.take(2).map((g) => g.name).join(' · ')
+                          ? user.preferredGenres
+                              .take(2)
+                              .map((g) => g.name)
+                              .join(' · ')
                           : '장르 미설정',
                     ),
                   ],
@@ -361,7 +417,8 @@ class _MypageScreenState extends State<MypageScreen> {
         color: const Color(0xFF2A2A2A),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Text(label, style: TextStyle(color: Colors.grey[300], fontSize: 11)),
+      child:
+          Text(label, style: TextStyle(color: Colors.grey[300], fontSize: 11)),
     );
   }
 
@@ -372,10 +429,65 @@ class _MypageScreenState extends State<MypageScreen> {
         children: [
           Text(title,
               style: const TextStyle(
-                  color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold)),
           const SizedBox(width: 8),
           if (sub.isNotEmpty)
             Text(sub, style: TextStyle(color: Colors.grey[500], fontSize: 13)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRatingsHeader() {
+    final start = _ratings.isEmpty ? 0 : _ratingPageIndex * _ratingPageSize + 1;
+    final endCandidate = start + _ratingPageSize - 1;
+    final end = endCandidate > _ratings.length ? _ratings.length : endCandidate;
+    final sub = _ratings.isEmpty ? '0편' : '$start-$end/${_ratings.length}편';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
+      child: Row(
+        children: [
+          const Text('내 리뷰',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold)),
+          const SizedBox(width: 8),
+          Text(sub, style: TextStyle(color: Colors.grey[500], fontSize: 13)),
+          const Spacer(),
+          Container(
+            height: 32,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E1E1E),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFF2A2A2A)),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<int>(
+                value: _ratingPageSize,
+                dropdownColor: const Color(0xFF1E1E1E),
+                icon:
+                    Icon(Icons.expand_more, color: Colors.grey[400], size: 18),
+                style: const TextStyle(color: Colors.white, fontSize: 12),
+                items: const [
+                  DropdownMenuItem(value: 5, child: Text('5개')),
+                  DropdownMenuItem(value: 10, child: Text('10개')),
+                  DropdownMenuItem(value: 20, child: Text('20개')),
+                ],
+                onChanged: (value) {
+                  if (value == null) return;
+                  setState(() {
+                    _ratingPageSize = value;
+                    _ratingPageIndex = 0;
+                  });
+                },
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -405,70 +517,148 @@ class _MypageScreenState extends State<MypageScreen> {
         ),
       );
     }
-    return ListView.separated(
-      physics: const NeverScrollableScrollPhysics(),
-      shrinkWrap: true,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: _ratings.length,
-      separatorBuilder: (_, __) => const Divider(color: Color(0xFF2A2A2A), height: 1),
-      itemBuilder: (_, i) {
-        final r = _ratings[i];
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: r.movie.posterUrl.isNotEmpty
-                    ? Image.network(r.movie.posterUrl,
-                        width: 46, height: 68, fit: BoxFit.cover)
-                    : Container(
-                        width: 46, height: 68,
-                        color: const Color(0xFF2A2A2A),
-                        child: const Icon(Icons.movie, color: Colors.grey, size: 18)),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(r.movie.title,
-                        style: const TextStyle(
-                            color: Colors.white, fontWeight: FontWeight.w500),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: List.generate(5, (j) {
-                        final full = j < r.score.floor();
-                        final half = !full && j < r.score;
-                        return Icon(
-                          full ? Icons.star : half ? Icons.star_half : Icons.star_border,
-                          color: const Color(0xFFFFD700),
-                          size: 14,
-                        );
-                      }),
-                    ),
-                    if (r.review != null && r.review!.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(r.review!,
-                            style: TextStyle(color: Colors.grey[400], fontSize: 12),
+    final startIndex = _ratingPageIndex * _ratingPageSize;
+    final endCandidate = startIndex + _ratingPageSize;
+    final endIndex =
+        endCandidate > _ratings.length ? _ratings.length : endCandidate;
+    final visibleRatings = _ratings.sublist(startIndex, endIndex);
+    final totalPages = _ratingTotalPages;
+
+    return Column(
+      children: [
+        ListView.separated(
+          physics: const NeverScrollableScrollPhysics(),
+          shrinkWrap: true,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: visibleRatings.length,
+          separatorBuilder: (_, __) =>
+              const Divider(color: Color(0xFF2A2A2A), height: 1),
+          itemBuilder: (_, i) {
+            final r = visibleRatings[i];
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: r.movie.posterUrl.isNotEmpty
+                        ? Image.network(r.movie.posterUrl,
+                            width: 46, height: 68, fit: BoxFit.cover)
+                        : Container(
+                            width: 46,
+                            height: 68,
+                            color: const Color(0xFF2A2A2A),
+                            child: const Icon(Icons.movie,
+                                color: Colors.grey, size: 18)),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(r.movie.title,
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w500),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis),
-                      ),
-                  ],
-                ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: List.generate(5, (j) {
+                            final full = j < r.score.floor();
+                            final half = !full && j < r.score;
+                            return Icon(
+                              full
+                                  ? Icons.star
+                                  : half
+                                      ? Icons.star_half
+                                      : Icons.star_border,
+                              color: const Color(0xFFFFD700),
+                              size: 14,
+                            );
+                          }),
+                        ),
+                        if (r.review != null && r.review!.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(r.review!,
+                                style: TextStyle(
+                                    color: Colors.grey[400], fontSize: 12),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Text(r.score.toStringAsFixed(1),
+                      style: const TextStyle(
+                          color: Color(0xFFFFD700),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16)),
+                ],
               ),
-              Text(r.score.toStringAsFixed(1),
-                  style: const TextStyle(
-                      color: Color(0xFFFFD700),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16)),
-            ],
+            );
+          },
+        ),
+        if (totalPages > 1) _buildRatingsPagination(totalPages),
+      ],
+    );
+  }
+
+  int get _ratingTotalPages {
+    if (_ratings.isEmpty) return 1;
+    return (_ratings.length + _ratingPageSize - 1) ~/ _ratingPageSize;
+  }
+
+  void _clampRatingPage() {
+    final lastPage = _ratingTotalPages - 1;
+    if (_ratingPageIndex > lastPage) {
+      _ratingPageIndex = lastPage;
+    }
+    if (_ratingPageIndex < 0) {
+      _ratingPageIndex = 0;
+    }
+  }
+
+  Widget _buildRatingsPagination(int totalPages) {
+    final canGoPrev = _ratingPageIndex > 0;
+    final canGoNext = _ratingPageIndex < totalPages - 1;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(Icons.chevron_left),
+            color: canGoPrev ? Colors.white : Colors.grey[700],
+            onPressed:
+                canGoPrev ? () => setState(() => _ratingPageIndex--) : null,
           ),
-        );
-      },
+          Container(
+            height: 32,
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E1E1E),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFF2A2A2A)),
+            ),
+            child: Text(
+              '${_ratingPageIndex + 1} / $totalPages',
+              style: TextStyle(color: Colors.grey[300], fontSize: 12),
+            ),
+          ),
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(Icons.chevron_right),
+            color: canGoNext ? Colors.white : Colors.grey[700],
+            onPressed:
+                canGoNext ? () => setState(() => _ratingPageIndex++) : null,
+          ),
+        ],
+      ),
     );
   }
 
@@ -518,7 +708,9 @@ class _MypageScreenState extends State<MypageScreen> {
               final m = Movie(
                 movieId: movieId,
                 title: title,
-                genres: (movie['genres'] as List<dynamic>? ?? []).map((e) => e.toString()).toList(),
+                genres: (movie['genres'] as List<dynamic>? ?? [])
+                    .map((e) => e.toString())
+                    .toList(),
                 avgRating: (movie['avgRating'] as num?)?.toDouble() ?? 0.0,
                 ratingCount: 0,
               );
@@ -535,8 +727,10 @@ class _MypageScreenState extends State<MypageScreen> {
                       borderRadius: BorderRadius.circular(8),
                       child: posterUrl.isNotEmpty
                           ? Image.network(posterUrl,
-                              width: 100, fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => _historyPlaceholder())
+                              width: 100,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) =>
+                                  _historyPlaceholder())
                           : _historyPlaceholder(),
                     ),
                   ),
@@ -556,7 +750,8 @@ class _MypageScreenState extends State<MypageScreen> {
 
   Widget _historyPlaceholder() => Container(
         color: const Color(0xFF2A2A2A),
-        child: const Center(child: Icon(Icons.movie, color: Colors.grey, size: 28)),
+        child: const Center(
+            child: Icon(Icons.movie, color: Colors.grey, size: 28)),
       );
 
   Widget _buildDangerZone() {
@@ -569,12 +764,15 @@ class _MypageScreenState extends State<MypageScreen> {
             width: double.infinity,
             child: OutlinedButton.icon(
               onPressed: _confirmWithdraw,
-              icon: const Icon(Icons.person_remove, color: Color(0xFFE50914), size: 18),
-              label: const Text('회원탈퇴', style: TextStyle(color: Color(0xFFE50914))),
+              icon: const Icon(Icons.person_remove,
+                  color: Color(0xFFE50914), size: 18),
+              label: const Text('회원탈퇴',
+                  style: TextStyle(color: Color(0xFFE50914))),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: Color(0xFFE50914)),
                 padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
               ),
             ),
           ),

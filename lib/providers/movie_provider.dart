@@ -14,6 +14,7 @@ class MovieProvider extends ChangeNotifier {
   String? _error;
   Movie? _currentMovie;
   int _wishlistRevision = 0;
+  int _ratingRevision = 0;
 
   List<Movie> get movies => _movies;
   List<Movie> get searchResults => _searchResults;
@@ -24,6 +25,7 @@ class MovieProvider extends ChangeNotifier {
   String? get error => _error;
   Movie? get currentMovie => _currentMovie;
   int get wishlistRevision => _wishlistRevision;
+  int get ratingRevision => _ratingRevision;
 
   Future<void> loadGenres() async {
     try {
@@ -118,6 +120,8 @@ class MovieProvider extends ChangeNotifier {
         'score': score,
         if (review != null && review.isNotEmpty) 'review': review,
       });
+      _ratingRevision++;
+      notifyListeners();
       return true;
     } catch (_) {
       return false;
