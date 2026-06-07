@@ -13,6 +13,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  String _sortMode = '추천순'; // 추천순, 주간인기순, 월간인기순
+
   @override
   void initState() {
     super.initState();
@@ -22,11 +24,25 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadAll() async {
     final mp = context.read<MovieProvider>();
     final rp = context.read<RecommendationProvider>();
-    await Future.wait([
-      mp.loadGenres(),
-      mp.loadMovies(),
-      rp.loadRecommendations(),
-    ]);
+    if (_sortMode == '추천순') {
+      await Future.wait([mp.loadGenres(), mp.loadMovies(), rp.loadRecommendations()]);
+    } else {
+      final period = _sortMode == '주간인기순' ? 'weekly' : 'monthly';
+      await Future.wait([mp.loadGenres(), mp.loadMovies(), mp.loadPopularMovies(period: period)]);
+    }
+  }
+
+  void _onSortChanged(String mode) {
+    if (mode == _sortMode) return;
+    setState(() => _sortMode = mode);
+    final mp = context.read<MovieProvider>();
+    final rp = context.read<RecommendationProvider>();
+    if (mode == '추천순') {
+      rp.loadRecommendations();
+    } else {
+      final period = mode == '주간인기순' ? 'weekly' : 'monthly';
+      mp.loadPopularMovies(period: period);
+    }
   }
 
   @override
@@ -42,11 +58,16 @@ class _HomeScreenState extends State<HomeScreen> {
             slivers: [
               _buildAppBar(),
               _buildSearchBar(),
-              _buildGenreFilter(),
-              _buildHeroSpotlight(),
-              _buildRecommendationSection(),
-              _buildWeightDashboard(),
-              _buildPopularSection(),
+              _buildSortTabs(),
+              if (_sortMode == '추천순') ...[
+                _buildGenreFilter(),
+                _buildHeroSpotlight(),
+                _buildRecommendationSection(),
+                _buildWeightDashboard(),
+                _buildAllMoviesSection(),
+              ] else ...[
+                _buildPopularSection(),
+              ],
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
             ],
           ),
@@ -101,6 +122,45 @@ class _HomeScreenState extends State<HomeScreen> {
               Text('영화 검색...', style: TextStyle(color: Colors.grey[500])),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSortTabs() {
+    const modes = ['추천순', '주간인기순', '월간인기순'];
+    return SliverToBoxAdapter(
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E1E1E),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: modes.map((mode) {
+            final selected = _sortMode == mode;
+            return Expanded(
+              child: GestureDetector(
+                onTap: () => _onSortChanged(mode),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  decoration: BoxDecoration(
+                    color: selected ? const Color(0xFFE50914) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    mode,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: selected ? Colors.white : Colors.grey[400],
+                      fontSize: 13,
+                      fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
         ),
       ),
     );
@@ -442,7 +502,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildPopularSection() {
+  Widget _buildAllMoviesSection() {
     return SliverToBoxAdapter(
       child: Consumer<MovieProvider>(
         builder: (_, mp, __) {
@@ -495,11 +555,100 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _onFeedback(Movie movie, String type) async {
-    final ok = await context.read<MovieProvider>().submitFeedback(
-      movie.movieId,
-      type,
+  Widget _buildPopularSection() {
+    return SliverToBoxAdapter(
+      child: Consumer<MovieProvider>(
+        builder: (_, mp, __) {
+          if (mp.popularLoading) {
+            return const SizedBox(
+              height: 300,
+              child: Center(
+                child: CircularProgressIndicator(color: Color(0xFFE50914)),
+              ),
+            );
+          }
+          if (mp.popularMovies.isEmpty) {
+            return const SizedBox(
+              height: 200,
+              child: Center(
+                child: Text('인기 영화 데이터가 없습니다', style: TextStyle(color: Colors.grey)),
+              ),
+            );
+          }
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                child: Row(
+                  children: [
+                    Text(
+                      _sortMode,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2A1A1A),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: const Color(0xFFE50914).withValues(alpha: 0.6)),
+                      ),
+                      child: Text(
+                        _sortMode == '주간인기순' ? '7일' : '30일',
+                        style: const TextStyle(
+                          color: Color(0xFFE50914),
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  childAspectRatio: 0.55,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 16,
+                ),
+                itemCount: mp.popularMovies.length,
+                itemBuilder: (_, i) {
+                  final movie = mp.popularMovies[i];
+                  return MovieCard(
+                    movie: movie,
+                    width: double.infinity,
+                    height: 160,
+                    onTap: () => Navigator.pushNamed(
+                      context,
+                      '/movie',
+                      arguments: movie,
+                    ),
+                  );
+                },
+              ),
+            ],
+          );
+        },
+      ),
     );
+  }
+
+  Future<void> _onFeedback(Movie movie, String type) async {
+    if (type == 'DISLIKE') {
+      // FR-64: remove immediately so next candidate fills the space
+      context.read<RecommendationProvider>().removeRecommendation(movie.movieId);
+    }
+
+    final ok = await context.read<MovieProvider>().submitFeedback(movie.movieId, type);
     if (ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -510,7 +659,9 @@ class _HomeScreenState extends State<HomeScreen> {
               : const Color(0xFFE50914),
         ),
       );
-      context.read<RecommendationProvider>().loadRecommendations();
+      if (type == 'LIKE') {
+        context.read<RecommendationProvider>().loadRecommendations();
+      }
     }
   }
 }

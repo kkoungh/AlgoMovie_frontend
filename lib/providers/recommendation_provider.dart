@@ -27,17 +27,32 @@ class RecommendationProvider extends ChangeNotifier {
       final data = await _api.get('/recommendations');
       final list = data['recommendations'] as List<dynamic>? ?? [];
       _recommendations = list
-          .map((m) => Movie.fromJson(m as Map<String, dynamic>))
+          .whereType<Map<String, dynamic>>()
+          .map((m) {
+            try {
+              return Movie.fromJson(m);
+            } catch (e) {
+              debugPrint('Movie.fromJson 실패: $e — $m');
+              return null;
+            }
+          })
+          .whereType<Movie>()
           .toList();
       _weights   = data['weights']   as Map<String, dynamic>?;
       _fromCache = data['fromCache'] as bool? ?? false;
       _isNewUser = data['isNewUser'] as bool? ?? false;
     } catch (e) {
       _error = e.toString();
+      debugPrint('loadRecommendations 에러: $e');
     } finally {
       _loading = false;
       notifyListeners();
     }
+  }
+
+  void removeRecommendation(int movieId) {
+    _recommendations.removeWhere((m) => m.movieId == movieId);
+    notifyListeners();
   }
 
   void clear() {

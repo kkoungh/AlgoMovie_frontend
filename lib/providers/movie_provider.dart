@@ -7,21 +7,25 @@ class MovieProvider extends ChangeNotifier {
 
   List<Movie> _movies = [];
   List<Movie> _searchResults = [];
+  List<Movie> _popularMovies = [];
   List<String> _genres = [];
   String _selectedGenre = '전체';
   bool _loading = false;
   bool _searchLoading = false;
+  bool _popularLoading = false;
   String? _error;
   Movie? _currentMovie;
 
-  List<Movie>  get movies        => _movies;
-  List<Movie>  get searchResults => _searchResults;
-  List<String> get genres        => _genres;
-  String       get selectedGenre => _selectedGenre;
-  bool         get loading       => _loading;
-  bool         get searchLoading => _searchLoading;
-  String?      get error         => _error;
-  Movie?       get currentMovie  => _currentMovie;
+  List<Movie>  get movies         => _movies;
+  List<Movie>  get searchResults  => _searchResults;
+  List<Movie>  get popularMovies  => _popularMovies;
+  List<String> get genres         => _genres;
+  String       get selectedGenre  => _selectedGenre;
+  bool         get loading        => _loading;
+  bool         get searchLoading  => _searchLoading;
+  bool         get popularLoading => _popularLoading;
+  String?      get error          => _error;
+  Movie?       get currentMovie   => _currentMovie;
 
   Future<void> loadGenres() async {
     try {
@@ -48,6 +52,21 @@ class MovieProvider extends ChangeNotifier {
       _error = e.toString();
     } finally {
       _loading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadPopularMovies({String period = 'weekly'}) async {
+    _popularLoading = true;
+    notifyListeners();
+    try {
+      final data = await _api.get('/movies/popular?period=$period') as Map<String, dynamic>;
+      final list = data['movies'] as List<dynamic>;
+      _popularMovies = list.map((m) => Movie.fromJson(m as Map<String, dynamic>)).toList();
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _popularLoading = false;
       notifyListeners();
     }
   }
