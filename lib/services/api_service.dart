@@ -6,15 +6,33 @@ import '../config/constants.dart';
 class ApiService {
   static final ApiService _instance = ApiService._internal();
   factory ApiService() => _instance;
-  ApiService._internal();
+  ApiService._internal()
+      : _client = http.Client(),
+        _storage = const FlutterSecureStorage();
 
-  final _storage = const FlutterSecureStorage();
+  http.Client _client;
+  FlutterSecureStorage _storage;
 
+  /// Replaces network and storage dependencies in tests without changing
+  /// production construction.
+  void configureForTesting({
+    http.Client? client,
+    FlutterSecureStorage? storage,
+  }) {
+    if (client != null) _client = client;
+    if (storage != null) _storage = storage;
+  }
+
+  /// Reads the current access token from secure storage.
   Future<String?> getToken() => _storage.read(key: 'access_token');
+
+  /// Persists access and refresh tokens after successful login.
   Future<void> saveTokens(String access, String refresh) async {
-    await _storage.write(key: 'access_token',  value: access);
+    await _storage.write(key: 'access_token', value: access);
     await _storage.write(key: 'refresh_token', value: refresh);
   }
+
+  /// Removes local authentication tokens.
   Future<void> clearTokens() async {
     await _storage.delete(key: 'access_token');
     await _storage.delete(key: 'refresh_token');
@@ -29,16 +47,19 @@ class ApiService {
     return headers;
   }
 
+  /// Sends a GET request to a backend API path.
   Future<dynamic> get(String path, {bool auth = true}) async {
-    final res = await http.get(
+    final res = await _client.get(
       Uri.parse('${ApiConstants.baseUrl}$path'),
       headers: await _headers(auth: auth),
     );
     return _parse(res);
   }
 
-  Future<dynamic> post(String path, Map<String, dynamic> body, {bool auth = true}) async {
-    final res = await http.post(
+  /// Sends a JSON POST request to a backend API path.
+  Future<dynamic> post(String path, Map<String, dynamic> body,
+      {bool auth = true}) async {
+    final res = await _client.post(
       Uri.parse('${ApiConstants.baseUrl}$path'),
       headers: await _headers(auth: auth),
       body: jsonEncode(body),
@@ -46,8 +67,9 @@ class ApiService {
     return _parse(res);
   }
 
+  /// Sends a JSON PATCH request to a backend API path.
   Future<dynamic> patch(String path, Map<String, dynamic> body) async {
-    final res = await http.patch(
+    final res = await _client.patch(
       Uri.parse('${ApiConstants.baseUrl}$path'),
       headers: await _headers(),
       body: jsonEncode(body),
@@ -55,8 +77,9 @@ class ApiService {
     return _parse(res);
   }
 
+  /// Sends a DELETE request to a backend API path.
   Future<dynamic> delete(String path) async {
-    final res = await http.delete(
+    final res = await _client.delete(
       Uri.parse('${ApiConstants.baseUrl}$path'),
       headers: await _headers(),
     );
@@ -71,17 +94,22 @@ class ApiService {
       return jsonDecode(body);
     }
     Map<String, dynamic> err = {};
-    try { err = jsonDecode(body); } catch (_) {}
+    try {
+      err = jsonDecode(body);
+    } catch (_) {}
     final msg = err['message'] ?? '요청에 실패했습니다. (${res.statusCode})';
     throw ApiException(msg, res.statusCode, err['code']);
   }
 }
 
+/// Error raised for non-2xx API responses.
 class ApiException implements Exception {
   final String message;
   final int statusCode;
   final String? code;
+
   ApiException(this.message, this.statusCode, this.code);
+
   @override
   String toString() => message;
 }

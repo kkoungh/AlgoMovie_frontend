@@ -11,12 +11,13 @@ class RecommendationProvider extends ChangeNotifier {
   Map<String, dynamic>? _weights;
   bool _fromCache = false;
 
-  List<Movie>          get recommendations => _recommendations;
-  bool                 get loading         => _loading;
-  String?              get error           => _error;
-  Map<String, dynamic>? get weights        => _weights;
-  bool                 get fromCache       => _fromCache;
+  List<Movie> get recommendations => _recommendations;
+  bool get loading => _loading;
+  String? get error => _error;
+  Map<String, dynamic>? get weights => _weights;
+  bool get fromCache => _fromCache;
 
+  /// Loads personalized recommendations and exposes loading/error states.
   Future<void> loadRecommendations() async {
     _loading = true;
     _error = null;
@@ -24,10 +25,9 @@ class RecommendationProvider extends ChangeNotifier {
     try {
       final data = await _api.get('/recommendations');
       final list = data['recommendations'] as List<dynamic>? ?? [];
-      _recommendations = list
-          .map((m) => Movie.fromJson(m as Map<String, dynamic>))
-          .toList();
-      _weights  = data['weights']   as Map<String, dynamic>?;
+      _recommendations =
+          list.map((m) => Movie.fromJson(m as Map<String, dynamic>)).toList();
+      _weights = data['weights'] as Map<String, dynamic>?;
       _fromCache = data['fromCache'] as bool? ?? false;
     } catch (e) {
       _error = e.toString();
@@ -37,9 +37,10 @@ class RecommendationProvider extends ChangeNotifier {
     }
   }
 
+  /// Clears in-memory recommendations and recommendation metadata.
   void clear() {
     _recommendations = [];
-    _weights  = null;
+    _weights = null;
     _fromCache = false;
     notifyListeners();
   }

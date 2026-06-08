@@ -16,11 +16,11 @@ class User {
   });
 
   factory User.fromJson(Map<String, dynamic> json) => User(
-        userId:          json['userId'] as int,
-        email:           json['email']  as String,
-        nickname:        json['nickname'] as String,
+        userId: json['userId'] as int,
+        email: json['email'] as String,
+        nickname: json['nickname'] as String,
         profileImageUrl: json['profileImageUrl'] as String?,
-        ratingCount:     json['ratingCount'] as int? ?? 0,
+        ratingCount: json['ratingCount'] as int? ?? 0,
         preferredGenres: (json['preferredGenres'] as List<dynamic>? ?? [])
             .map((g) => Genre.fromJson(g as Map<String, dynamic>))
             .toList(),

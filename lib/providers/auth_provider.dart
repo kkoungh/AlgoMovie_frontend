@@ -12,9 +12,10 @@ class AuthProvider extends ChangeNotifier {
   String? _error;
 
   AuthStatus get status => _status;
-  User?       get user   => _user;
-  String?     get error  => _error;
+  User? get user => _user;
+  String? get error => _error;
 
+  /// Restores a session from secure storage and validates it with the backend.
   Future<void> checkAuth() async {
     final token = await _api.getToken();
     if (token == null) {
@@ -24,7 +25,7 @@ class AuthProvider extends ChangeNotifier {
     }
     try {
       final data = await _api.get('/users/me');
-      _user   = User.fromJson(data);
+      _user = User.fromJson(data);
       _status = AuthStatus.authenticated;
     } catch (_) {
       await _api.clearTokens();
@@ -33,21 +34,27 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Logs in with email/password and stores issued tokens on success.
   Future<bool> login(String email, String password) async {
     _error = null;
     try {
-      final data = await _api.post('/auth/login', {
-        'email': email,
-        'password': password,
-      }, auth: false);
+      final data = await _api.post(
+          '/auth/login',
+          {
+            'email': email,
+            'password': password,
+          },
+          auth: false);
       await _api.saveTokens(data['accessToken'], data['refreshToken']);
-      _user   = User.fromJson(data['user'] is Map ? data['user'] : {
-        'userId': data['user']['userId'],
-        'email': email,
-        'nickname': data['user']['nickname'],
-        'ratingCount': 0,
-        'preferredGenres': [],
-      });
+      _user = User.fromJson(data['user'] is Map
+          ? data['user']
+          : {
+              'userId': data['user']['userId'],
+              'email': email,
+              'nickname': data['user']['nickname'],
+              'ratingCount': 0,
+              'preferredGenres': [],
+            });
       _status = AuthStatus.authenticated;
       notifyListeners();
       return true;
@@ -58,6 +65,7 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Creates a new user with preferred genres, then logs the user in.
   Future<bool> register({
     required String email,
     required String password,
@@ -66,12 +74,15 @@ class AuthProvider extends ChangeNotifier {
   }) async {
     _error = null;
     try {
-      await _api.post('/auth/register', {
-        'email':    email,
-        'password': password,
-        'nickname': nickname,
-        'genres':   genres,
-      }, auth: false);
+      await _api.post(
+          '/auth/register',
+          {
+            'email': email,
+            'password': password,
+            'nickname': nickname,
+            'genres': genres,
+          },
+          auth: false);
       return await login(email, password);
     } on ApiException catch (e) {
       _error = e.message;
@@ -80,13 +91,15 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Clears local session state and tokens.
   Future<void> logout() async {
     await _api.clearTokens();
-    _user   = null;
+    _user = null;
     _status = AuthStatus.unauthenticated;
     notifyListeners();
   }
 
+  /// Refreshes the current user's profile from the backend.
   Future<void> refreshProfile() async {
     try {
       final data = await _api.get('/users/me');

@@ -48,12 +48,12 @@ class App extends StatelessWidget {
         ),
         home: const _AuthGate(),
         routes: {
-          '/login':    (_) => const LoginScreen(),
+          '/login': (_) => const LoginScreen(),
           '/register': (_) => const RegisterScreen(),
-          '/home':     (_) => const HomeScreen(),
-          '/search':   (_) => const SearchScreen(),
-          '/movie':    (_) => const MovieDetailScreen(),
-          '/mypage':   (_) => const MypageScreen(),
+          '/home': (_) => const HomeScreen(),
+          '/search': (_) => const SearchScreen(),
+          '/movie': (_) => const MovieDetailScreen(),
+          '/mypage': (_) => const MypageScreen(),
         },
       ),
     );

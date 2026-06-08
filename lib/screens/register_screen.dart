@@ -35,10 +35,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _loadGenres() async {
     try {
-      final data =
-          await ApiService().get('/genres', auth: false) as List<dynamic>;
+      final data = await ApiService().get('/genres', auth: false);
+      final list = data is Map<String, dynamic>
+          ? data['genres'] as List<dynamic>? ?? []
+          : data as List<dynamic>;
       setState(() {
-        _allGenres = data.cast<Map<String, dynamic>>();
+        _allGenres = list.cast<Map<String, dynamic>>();
       });
     } catch (_) {}
   }
@@ -56,7 +58,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (_selectedGenres.length < 3) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('장르를 1개 이상 선택하세요'),
+          content: Text('장르를 3개 이상 선택하세요'),
           backgroundColor: Color(0xFFE50914),
         ),
       );
@@ -137,7 +139,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '1개 이상 선택해주세요',
+                  '3개 이상 선택해주세요',
                   style: TextStyle(color: Colors.grey[500], fontSize: 12),
                 ),
                 const SizedBox(height: 12),

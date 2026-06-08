@@ -26,17 +26,19 @@ class Movie {
   });
 
   factory Movie.fromJson(Map<String, dynamic> json) => Movie(
-        movieId:     json['movieId']    as int,
-        title:       json['title']      as String,
-        genres:      (json['genres']    as List<dynamic>? ?? []).map((g) => g.toString()).toList(),
-        director:    json['director']   as String?,
+        movieId: json['movieId'] as int,
+        title: json['title'] as String,
+        genres: (json['genres'] as List<dynamic>? ?? [])
+            .map((g) => g.toString())
+            .toList(),
+        director: json['director'] as String?,
         castMembers: json['castMembers'] as List<dynamic>?,
-        overview:    json['overview']   as String?,
-        posterPath:  json['posterPath'] as String?,
+        overview: json['overview'] as String?,
+        posterPath: json['posterPath'] as String?,
         releaseYear: json['releaseYear'] as int?,
-        avgRating:   (json['avgRating'] as num?)?.toDouble() ?? 0.0,
+        avgRating: (json['avgRating'] as num?)?.toDouble() ?? 0.0,
         ratingCount: json['ratingCount'] as int? ?? 0,
-        finalScore:  (json['finalScore'] as num?)?.toDouble(),
+        finalScore: (json['finalScore'] as num?)?.toDouble(),
       );
 
   String get posterUrl {

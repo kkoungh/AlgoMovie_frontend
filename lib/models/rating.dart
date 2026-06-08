@@ -16,10 +16,10 @@ class RatingItem {
   });
 
   factory RatingItem.fromJson(Map<String, dynamic> json) => RatingItem(
-        ratingId:  json['ratingId'] as int,
-        score:     (json['score']   as num).toDouble(),
-        review:    json['review']   as String?,
+        ratingId: json['ratingId'] as int,
+        score: (json['score'] as num).toDouble(),
+        review: json['review'] as String?,
         createdAt: DateTime.parse(json['createdAt'] as String),
-        movie:     Movie.fromJson(json['movie'] as Map<String, dynamic>),
+        movie: Movie.fromJson(json['movie'] as Map<String, dynamic>),
       );
 }

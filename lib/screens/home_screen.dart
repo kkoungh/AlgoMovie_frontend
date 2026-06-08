@@ -138,9 +138,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: TextStyle(
                         color: selected ? Colors.white : Colors.grey[400],
                         fontSize: 13,
-                        fontWeight: selected
-                            ? FontWeight.w600
-                            : FontWeight.normal,
+                        fontWeight:
+                            selected ? FontWeight.w600 : FontWeight.normal,
                       ),
                     ),
                   ),
@@ -336,10 +335,10 @@ class _HomeScreenState extends State<HomeScreen> {
           final w = rp.weights;
           if (w == null) return const SizedBox.shrink();
 
-          final alpha   = (w['alpha']   as num?)?.toDouble() ?? 0.0;
-          final beta    = (w['beta']    as num?)?.toDouble() ?? 0.0;
-          final gamma   = (w['gamma']   as num?)?.toDouble() ?? 0.0;
-          final segment = w['segment']  as String? ?? '';
+          final alpha = (w['alpha'] as num?)?.toDouble() ?? 0.0;
+          final beta = (w['beta'] as num?)?.toDouble() ?? 0.0;
+          final gamma = (w['gamma'] as num?)?.toDouble() ?? 0.0;
+          final segment = w['segment'] as String? ?? '';
 
           return Container(
             margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -491,9 +490,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _onFeedback(Movie movie, String type) async {
     final ok = await context.read<MovieProvider>().submitFeedback(
-      movie.movieId,
-      type,
-    );
+          movie.movieId,
+          type,
+        );
     if (ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
