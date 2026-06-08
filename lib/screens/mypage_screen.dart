@@ -146,10 +146,11 @@ class _MypageScreenState extends State<MypageScreen> {
                       radius: 40,
                       backgroundColor: const Color(0xFFF59E0B),
                       backgroundImage: dialogBytes != null
-                          ? MemoryImage(dialogBytes!)
+                          ? MemoryImage(dialogBytes!) as ImageProvider
                           : (user.profileImageUrl != null
-                              ? NetworkImage(user.profileImageUrl!)
-                                  as ImageProvider
+                              ? (user.profileImageUrl!.startsWith('data:')
+                                  ? MemoryImage(base64Decode(user.profileImageUrl!.split(',').last)) as ImageProvider
+                                  : NetworkImage(user.profileImageUrl!) as ImageProvider)
                               : null),
                       child:
                           (dialogBytes == null && user.profileImageUrl == null)
@@ -200,22 +201,33 @@ class _MypageScreenState extends State<MypageScreen> {
             ),
             TextButton(
               onPressed: () async {
+                final savedBytes = dialogBytes;
+                final savedNickname = nicknameCtrl.text.trim();
                 Navigator.pop(ctx);
                 try {
                   String? imageUrl = user.profileImageUrl;
-                  if (dialogBytes != null) {
-                    final b64 = base64Encode(dialogBytes!);
+                  if (savedBytes != null) {
+                    final b64 = base64Encode(savedBytes);
                     imageUrl = 'data:image/jpeg;base64,$b64';
                   }
                   await _api.patch('/users/me', {
-                    'nickname': nicknameCtrl.text.trim(),
+                    'nickname': savedNickname,
                     if (imageUrl != null) 'profileImageUrl': imageUrl,
                   });
                   if (mounted) {
-                    setState(() => _pickedImageBytes = dialogBytes);
+                    setState(() => _pickedImageBytes = savedBytes);
                     await context.read<AuthProvider>().refreshProfile();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('프로필이 저장됐어요')),
+                    );
                   }
-                } catch (_) {}
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('저장 실패: $e')),
+                    );
+                  }
+                }
               },
               child:
                   const Text('저장', style: TextStyle(color: Color(0xFFF59E0B))),
@@ -277,7 +289,13 @@ class _MypageScreenState extends State<MypageScreen> {
       try {
         await _api.delete('/auth/withdraw');
         if (mounted) await context.read<AuthProvider>().logout();
-      } catch (_) {}
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('탈퇴 실패: $e')),
+          );
+        }
+      }
     }
   }
 
@@ -344,7 +362,9 @@ class _MypageScreenState extends State<MypageScreen> {
                 backgroundImage: _pickedImageBytes != null
                     ? MemoryImage(_pickedImageBytes!) as ImageProvider
                     : (user.profileImageUrl != null
-                        ? NetworkImage(user.profileImageUrl!)
+                        ? (user.profileImageUrl!.startsWith('data:')
+                            ? MemoryImage(base64Decode(user.profileImageUrl!.split(',').last)) as ImageProvider
+                            : NetworkImage(user.profileImageUrl!) as ImageProvider)
                         : null),
                 child:
                     (_pickedImageBytes == null && user.profileImageUrl == null)
@@ -566,7 +586,7 @@ class _MypageScreenState extends State<MypageScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Text('$count편', style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+                  Text('${(ratio * 100).round()}%', style: TextStyle(color: Colors.grey[500], fontSize: 11)),
                 ]),
               );
             }),
@@ -689,7 +709,9 @@ class _MypageScreenState extends State<MypageScreen> {
               const Divider(color: Color(0xFF252010), height: 1),
           itemBuilder: (_, i) {
             final r = visibleRatings[i];
-            return Padding(
+            return GestureDetector(
+              onTap: () => Navigator.pushNamed(context, '/movie', arguments: r.movie),
+              child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 12),
               child: Row(
                 children: [
@@ -757,7 +779,7 @@ class _MypageScreenState extends State<MypageScreen> {
                           fontSize: 16)),
                 ],
               ),
-            );
+            ));
           },
         ),
         if (totalPages > 1) _buildRatingsPagination(totalPages),

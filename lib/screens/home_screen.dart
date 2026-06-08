@@ -43,11 +43,9 @@ class _HomeScreenState extends State<HomeScreen> {
             slivers: [
               _buildAppBar(),
               _buildSearchBar(),
-              _buildGenreFilter(),
               _buildHeroSpotlight(),
               _buildRecommendationSection(),
               _buildPopularSection(),
-              _buildAllMoviesSection(),
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
             ],
           ),
@@ -103,53 +101,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildGenreFilter() {
-    return SliverToBoxAdapter(
-      child: Consumer<MovieProvider>(
-        builder: (_, mp, __) {
-          return SizedBox(
-            height: 44,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: mp.genres.length,
-              itemBuilder: (_, i) {
-                final g = mp.genres[i];
-                final selected = mp.selectedGenre == g;
-                return GestureDetector(
-                  onTap: () => mp.selectGenre(g),
-                  child: Container(
-                    margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: selected
-                          ? const Color(0xFFF59E0B)
-                          : const Color(0xFF252010),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      g,
-                      style: TextStyle(
-                        color: selected ? Colors.white : Colors.grey[400],
-                        fontSize: 13,
-                        fontWeight: selected
-                            ? FontWeight.w600
-                            : FontWeight.normal,
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          );
-        },
       ),
     );
   }
@@ -317,6 +268,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     itemCount: rp.recommendations.length,
                     itemBuilder: (_, i) {
                       final movie = rp.recommendations[i];
+                      final voted = rp.votedMovieIds.contains(movie.movieId);
                       return MovieCard(
                         movie: movie,
                         onTap: () => Navigator.pushNamed(
@@ -324,64 +276,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           '/movie',
                           arguments: movie,
                         ),
-                        onFeedback: (type) => _onFeedback(movie, type),
+                        onFeedback: voted ? null : (type) => _onFeedback(movie, type),
                       );
                     },
                   ),
                 ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildAllMoviesSection() {
-    return SliverToBoxAdapter(
-      child: Consumer<MovieProvider>(
-        builder: (_, mp, __) {
-          if (mp.loading) {
-            return const SizedBox(
-              height: 240,
-              child: Center(
-                child: CircularProgressIndicator(color: Color(0xFFF59E0B)),
-              ),
-            );
-          }
-          if (mp.movies.isEmpty) return const SizedBox.shrink();
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16, 8, 16, 12),
-                child: Text(
-                  '전체 영화',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              SizedBox(
-                height: 280,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: mp.movies.length,
-                  itemBuilder: (_, i) {
-                    final movie = mp.movies[i];
-                    return MovieCard(
-                      movie: movie,
-                      onTap: () => Navigator.pushNamed(
-                        context,
-                        '/movie',
-                        arguments: movie,
-                      ),
-                    );
-                  },
-                ),
-              ),
             ],
           );
         },
@@ -467,8 +366,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _onFeedback(Movie movie, String type) async {
-    if (type == 'DISLIKE') {
-      // FR-64: remove immediately so next candidate fills the space
+    if (type == 'LIKE') {
+      context.read<RecommendationProvider>().markVoted(movie.movieId);
+    } else {
       context.read<RecommendationProvider>().removeRecommendation(movie.movieId);
     }
 
@@ -483,9 +383,6 @@ class _HomeScreenState extends State<HomeScreen> {
               : const Color(0xFFF59E0B),
         ),
       );
-      if (type == 'LIKE') {
-        context.read<RecommendationProvider>().loadRecommendations();
-      }
     }
   }
 }

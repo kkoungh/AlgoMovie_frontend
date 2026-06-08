@@ -1,8 +1,8 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/movie.dart';
 
-class MovieCard extends StatelessWidget {
+class MovieCard extends StatefulWidget {
   final Movie movie;
   final VoidCallback? onTap;
   final Function(String)? onFeedback;
@@ -15,15 +15,35 @@ class MovieCard extends StatelessWidget {
     this.onTap,
     this.onFeedback,
     this.width = 140,
-    this.height = 180, // 🌟 [수정] 기본 포스터 이미지 높이를 210에서 180으로 줄여서 텍스트 공간(20~30px)을 확보합니다.
+    this.height = 180,
   });
 
   @override
+  State<MovieCard> createState() => _MovieCardState();
+}
+
+class _MovieCardState extends State<MovieCard> {
+  bool _feedbackGiven = false;
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedScale(
+        scale: _hovered ? 1.05 : 1.0,
+        duration: const Duration(milliseconds: 150),
+        child: _buildCard(),
+      ),
+    );
+  }
+
+  Widget _buildCard() {
     return GestureDetector(
-      onTap: onTap,
+      onTap: widget.onTap,
       child: Container(
-        width: width,
+        width: widget.width,
         margin: const EdgeInsets.only(right: 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -34,15 +54,15 @@ class MovieCard extends StatelessWidget {
               child: Stack(
                 children: [
                   _buildPoster(),
-                  if (onFeedback != null) _buildFeedbackButtons(),
+                  if (widget.onFeedback != null && !_feedbackGiven)
+                    _buildFeedbackButtons(),
                 ],
               ),
             ),
             const SizedBox(height: 6),
-            // 🌟 [유지 및 안전장치] 제목 영역이 부모의 남은 세로 공간에 딱 맞춰 크기를 조절하도록 유지합니다.
             Flexible(
               child: Text(
-                movie.title,
+                widget.movie.title,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -52,10 +72,10 @@ class MovieCard extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 2), // 🌟 [추가] 제목과 출시일 사이 간격 미세 조정
-            if (movie.releaseYear != null)
+            const SizedBox(height: 2),
+            if (widget.movie.releaseYear != null)
               Text(
-                '${movie.releaseYear}',
+                '${widget.movie.releaseYear}',
                 style: TextStyle(
                   color: Colors.grey[500],
                   fontSize: 11,
@@ -68,22 +88,22 @@ class MovieCard extends StatelessWidget {
   }
 
   Widget _buildPoster() {
-    if (movie.posterUrl.isEmpty) {
+    if (widget.movie.posterUrl.isEmpty) {
       return Container(
-        width: width,
-        height: height,
+        width: widget.width,
+        height: widget.height,
         color: const Color(0xFF252010),
         child: const Icon(Icons.movie, color: Colors.grey, size: 40),
       );
     }
     return CachedNetworkImage(
-      imageUrl: movie.posterUrl,
-      width: width,
-      height: height,
+      imageUrl: widget.movie.posterUrl,
+      width: widget.width,
+      height: widget.height,
       fit: BoxFit.cover,
       placeholder: (_, __) => Container(
-        width: width,
-        height: height,
+        width: widget.width,
+        height: widget.height,
         color: const Color(0xFF252010),
         child: const Center(
           child: CircularProgressIndicator(
@@ -93,13 +113,13 @@ class MovieCard extends StatelessWidget {
         ),
       ),
       errorWidget: (_, __, ___) => Container(
-        width: width,
-        height: height,
+        width: widget.width,
+        height: widget.height,
         color: const Color(0xFF252010),
         child: const Icon(Icons.broken_image, color: Colors.grey, size: 40),
       ),
-    ); // ⚡ 소괄호와 세미콜론으로 CachedNetworkImage를 완전히 닫아줍니다.
-  } // ⚡ 마지막 중괄호로 _buildPoster() 함수를 완전히 닫아줍니다.
+    );
+  }
 
   Widget _buildFeedbackButtons() {
     return Positioned(
@@ -131,7 +151,10 @@ class MovieCard extends StatelessWidget {
 
   Widget _feedbackBtn(IconData icon, String type, Color color) {
     return GestureDetector(
-      onTap: () => onFeedback?.call(type),
+      onTap: () {
+        widget.onFeedback?.call(type);
+        setState(() => _feedbackGiven = true);
+      },
       child: Container(
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(

@@ -11,6 +11,8 @@ class RecommendationProvider extends ChangeNotifier {
   Map<String, dynamic>? _weights;
   bool _fromCache = false;
   bool _isNewUser = false;
+  final Set<int> _votedMovieIds    = {};  // LIKE: 버튼 숨김
+  final Set<int> _dislikedMovieIds = {};  // DISLIKE: 목록에서 제거
 
   List<Movie>           get recommendations => _recommendations;
   bool                  get loading         => _loading;
@@ -18,6 +20,7 @@ class RecommendationProvider extends ChangeNotifier {
   Map<String, dynamic>? get weights         => _weights;
   bool                  get fromCache       => _fromCache;
   bool                  get isNewUser       => _isNewUser;
+  Set<int>              get votedMovieIds   => _votedMovieIds;
 
   Future<void> loadRecommendations() async {
     _loading = true;
@@ -37,6 +40,7 @@ class RecommendationProvider extends ChangeNotifier {
             }
           })
           .whereType<Movie>()
+          .where((m) => !_dislikedMovieIds.contains(m.movieId))
           .toList();
       _weights   = data['weights']   as Map<String, dynamic>?;
       _fromCache = data['fromCache'] as bool? ?? false;
@@ -50,7 +54,13 @@ class RecommendationProvider extends ChangeNotifier {
     }
   }
 
+  void markVoted(int movieId) {
+    _votedMovieIds.add(movieId);
+    notifyListeners();
+  }
+
   void removeRecommendation(int movieId) {
+    _dislikedMovieIds.add(movieId);
     _recommendations.removeWhere((m) => m.movieId == movieId);
     notifyListeners();
   }
