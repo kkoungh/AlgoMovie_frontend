@@ -19,6 +19,7 @@ class MovieProvider extends ChangeNotifier {
 
   int _ratingRevision = 0;
   int _wishlistRevision = 0;
+  int _historyRevision = 0;
   String _popularPeriod = 'weekly';
 
   List<Movie>  get movies          => _movies;
@@ -33,6 +34,7 @@ class MovieProvider extends ChangeNotifier {
   Movie?       get currentMovie    => _currentMovie;
   int          get wishlistRevision => _wishlistRevision;
   int          get ratingRevision  => _ratingRevision;
+  int          get historyRevision => _historyRevision;
   String       get popularPeriod   => _popularPeriod;
 
   Future<void> loadGenres() async {
@@ -109,6 +111,7 @@ class MovieProvider extends ChangeNotifier {
     try {
       final data = await _api.get('/movies/$movieId');
       _currentMovie = Movie.fromJson(data as Map<String, dynamic>);
+      _historyRevision++;
       notifyListeners();
       return _currentMovie;
     } catch (_) {

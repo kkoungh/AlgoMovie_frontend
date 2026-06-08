@@ -132,7 +132,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '1개 이상 선택해주세요',
+                  '3개 이상 선택해주세요',
                   style: TextStyle(color: Colors.grey[500], fontSize: 12),
                 ),
                 const SizedBox(height: 12),

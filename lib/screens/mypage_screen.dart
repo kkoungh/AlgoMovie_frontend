@@ -29,6 +29,7 @@ class _MypageScreenState extends State<MypageScreen> {
   int _ratingPageSize = 5;
   int _ratingPageIndex = 0;
   int? _lastRatingRevision;
+  int? _lastHistoryRevision;
 
   @override
   void initState() {
@@ -53,8 +54,10 @@ class _MypageScreenState extends State<MypageScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final revision = context.watch<MovieProvider>().ratingRevision;
-    if (_lastRatingRevision != null && revision != _lastRatingRevision) {
+    final mp = context.watch<MovieProvider>();
+
+    final ratingRev = mp.ratingRevision;
+    if (_lastRatingRevision != null && ratingRev != _lastRatingRevision) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         await Future.wait([
           context.read<AuthProvider>().refreshProfile(),
@@ -62,7 +65,13 @@ class _MypageScreenState extends State<MypageScreen> {
         ]);
       });
     }
-    _lastRatingRevision = revision;
+    _lastRatingRevision = ratingRev;
+
+    final historyRev = mp.historyRevision;
+    if (_lastHistoryRevision != null && historyRev != _lastHistoryRevision) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _loadHistory());
+    }
+    _lastHistoryRevision = historyRev;
   }
 
   Future<void> _loadRatings({bool showLoading = true}) async {
