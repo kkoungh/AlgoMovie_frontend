@@ -114,12 +114,12 @@ class FakeMovieProvider extends MovieProvider {
 
   List<Movie> _movies;
   List<Movie> _searchResults;
-  List<String> _genres;
+  final List<String> _genres;
   String _selectedGenre;
   Movie? _currentMovie;
-  List<Movie> _similarMovies;
+  final List<Movie> _similarMovies;
   bool _loading = false;
-  bool _searchLoading = false;
+  final bool _searchLoading = false;
   String? _error;
   int feedbackCalls = 0;
   int wishlistCalls = 0;
@@ -245,7 +245,7 @@ class FakeRecommendationProvider extends RecommendationProvider {
         _fromCache = fromCache;
 
   List<Movie> _recommendations;
-  bool _loading = false;
+  final bool _loading = false;
   String? _error;
   Map<String, dynamic>? _weights;
   bool _fromCache;

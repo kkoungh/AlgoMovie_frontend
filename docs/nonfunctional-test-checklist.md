@@ -9,6 +9,7 @@ This checklist covers frontend nonfunctional requirements that need browser, dep
   - NFR-07: deployed API URL examples use HTTPS.
 - `test/nonfunctional/usability_flow_test.dart`
   - NFR-11: a new user can complete mock onboarding and see a first recommendation.
+  - NFR-12: UI remains usable when recommendation data is empty or cached dependencies are unavailable.
   - NFR-13/NFR-15: lint and coverage expectations are captured as project checks.
 
 These tests use fake providers and mock data. They do not call the backend.
@@ -73,6 +74,20 @@ Pass criteria:
 - First recommendation appears within 5 minutes.
 - No real production account or production data is used unless explicitly approved.
 - Record test environment, network condition, and recommendation backend state.
+
+## NFR-12: Graceful Degradation
+
+Manual flow:
+
+1. Sign in with a test user.
+2. Temporarily make the recommendation service unavailable in a staging environment.
+3. Open the home screen.
+4. Confirm the app shows an empty or fallback recommendation state instead of crashing.
+
+Pass criteria:
+
+- The backend falls back to persisted recommendations or an empty list.
+- The frontend renders loading, empty, and error states without blocking navigation.
 
 ## NFR-13: Flutter Analyze
 

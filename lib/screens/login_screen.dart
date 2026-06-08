@@ -10,8 +10,8 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _formKey  = GlobalKey<FormState>();
-  final _emailCtrl    = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   bool _obscure = true;
   bool _loading = false;
@@ -27,9 +27,9 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     final ok = await context.read<AuthProvider>().login(
-      _emailCtrl.text.trim(),
-      _passwordCtrl.text,
-    );
+          _emailCtrl.text.trim(),
+          _passwordCtrl.text,
+        );
     if (mounted) setState(() => _loading = false);
     if (!ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -74,8 +74,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       controller: _emailCtrl,
                       label: '이메일',
                       keyboardType: TextInputType.emailAddress,
-                      validator: (v) =>
-                          v == null || !v.contains('@') ? '올바른 이메일을 입력하세요' : null,
+                      validator: (v) => v == null || !v.contains('@')
+                          ? '올바른 이메일을 입력하세요'
+                          : null,
                     ),
                     const SizedBox(height: 16),
                     _buildField(
