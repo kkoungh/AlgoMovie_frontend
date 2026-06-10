@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -10,7 +10,16 @@ import '../models/rating.dart';
 import '../models/movie.dart';
 
 class MypageScreen extends StatefulWidget {
-  const MypageScreen({super.key});
+  final List<RatingItem>? initialRatings;
+  final List<Movie>? initialWishlist;
+  final Map<String, dynamic>? initialStats;
+
+  const MypageScreen({
+    super.key,
+    this.initialRatings,
+    this.initialWishlist,
+    this.initialStats,
+  });
 
   @override
   State<MypageScreen> createState() => _MypageScreenState();
@@ -24,7 +33,7 @@ class _MypageScreenState extends State<MypageScreen> {
   Map<String, dynamic>? _stats;
   bool _ratingsLoading = true;
   bool _historyLoading = true;
-  bool _statsLoading   = true;
+  bool _statsLoading = true;
   Uint8List? _pickedImageBytes;
   int _ratingPageSize = 5;
   int _ratingPageIndex = 0;
@@ -34,18 +43,45 @@ class _MypageScreenState extends State<MypageScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialRatings != null) {
+      _ratings = widget.initialRatings!;
+      _ratingsLoading = false;
+    }
+    if (widget.initialWishlist != null) {
+      _history = widget.initialWishlist!
+          .map((movie) => {
+                'movie': {
+                  'movieId': movie.movieId,
+                  'title': movie.title,
+                  'posterPath': movie.posterPath,
+                  'genres': movie.genres,
+                  'avgRating': movie.avgRating,
+                },
+              })
+          .toList();
+      _historyLoading = false;
+    }
+    if (widget.initialStats != null) {
+      _stats = widget.initialStats;
+      _statsLoading = false;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AuthProvider>().refreshProfile();
-      _loadRatings();
-      _loadHistory();
-      _loadStats();
+      if (widget.initialRatings == null) _loadRatings();
+      if (widget.initialWishlist == null) _loadHistory();
+      if (widget.initialStats == null) _loadStats();
     });
   }
 
   Future<void> _loadStats() async {
     try {
       final data = await _api.get('/mypage/stats') as Map<String, dynamic>;
-      if (mounted) setState(() { _stats = data; _statsLoading = false; });
+      if (mounted) {
+        setState(() {
+          _stats = data;
+          _statsLoading = false;
+        });
+      }
     } catch (_) {
       if (mounted) setState(() => _statsLoading = false);
     }
@@ -54,7 +90,12 @@ class _MypageScreenState extends State<MypageScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final mp = context.watch<MovieProvider>();
+    MovieProvider? mp;
+    try {
+      mp = context.watch<MovieProvider>();
+    } catch (_) {
+      return;
+    }
 
     final ratingRev = mp.ratingRevision;
     if (_lastRatingRevision != null && ratingRev != _lastRatingRevision) {
@@ -149,8 +190,12 @@ class _MypageScreenState extends State<MypageScreen> {
                           ? MemoryImage(dialogBytes!) as ImageProvider
                           : (user.profileImageUrl != null
                               ? (user.profileImageUrl!.startsWith('data:')
-                                  ? MemoryImage(base64Decode(user.profileImageUrl!.split(',').last)) as ImageProvider
-                                  : NetworkImage(user.profileImageUrl!) as ImageProvider)
+                                  ? MemoryImage(base64Decode(user
+                                      .profileImageUrl!
+                                      .split(',')
+                                      .last)) as ImageProvider
+                                  : NetworkImage(user.profileImageUrl!)
+                                      as ImageProvider)
                               : null),
                       child:
                           (dialogBytes == null && user.profileImageUrl == null)
@@ -210,14 +255,16 @@ class _MypageScreenState extends State<MypageScreen> {
                     final b64 = base64Encode(savedBytes);
                     imageUrl = 'data:image/jpeg;base64,$b64';
                   }
+                  final authProvider = context.read<AuthProvider>();
+                  final messenger = ScaffoldMessenger.of(context);
                   await _api.patch('/users/me', {
                     'nickname': savedNickname,
                     if (imageUrl != null) 'profileImageUrl': imageUrl,
                   });
                   if (mounted) {
                     setState(() => _pickedImageBytes = savedBytes);
-                    await context.read<AuthProvider>().refreshProfile();
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    await authProvider.refreshProfile();
+                    messenger.showSnackBar(
                       const SnackBar(content: Text('프로필이 저장됐어요')),
                     );
                   }
@@ -363,8 +410,11 @@ class _MypageScreenState extends State<MypageScreen> {
                     ? MemoryImage(_pickedImageBytes!) as ImageProvider
                     : (user.profileImageUrl != null
                         ? (user.profileImageUrl!.startsWith('data:')
-                            ? MemoryImage(base64Decode(user.profileImageUrl!.split(',').last)) as ImageProvider
-                            : NetworkImage(user.profileImageUrl!) as ImageProvider)
+                            ? MemoryImage(base64Decode(
+                                    user.profileImageUrl!.split(',').last))
+                                as ImageProvider
+                            : NetworkImage(user.profileImageUrl!)
+                                as ImageProvider)
                         : null),
                 child:
                     (_pickedImageBytes == null && user.profileImageUrl == null)
@@ -469,7 +519,8 @@ class _MypageScreenState extends State<MypageScreen> {
     if (_statsLoading) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 16),
-        child: Center(child: CircularProgressIndicator(color: Color(0xFFF59E0B))),
+        child:
+            Center(child: CircularProgressIndicator(color: Color(0xFFF59E0B))),
       );
     }
     final s = _stats;
@@ -492,10 +543,10 @@ class _MypageScreenState extends State<MypageScreen> {
       );
     }
 
-    final total     = s['totalRatings']    as int;
-    final avg       = (s['avgRatingGiven'] as num?)?.toDouble() ?? 0.0;
-    final genres    = (s['genreDistribution'] as List<dynamic>? ?? []);
-    final maxGenre  = genres.isNotEmpty
+    final total = s['totalRatings'] as int;
+    final avg = (s['avgRatingGiven'] as num?)?.toDouble() ?? 0.0;
+    final genres = (s['genreDistribution'] as List<dynamic>? ?? []);
+    final maxGenre = genres.isNotEmpty
         ? (genres.map((g) => g['count'] as int).reduce((a, b) => a > b ? a : b))
         : 1;
 
@@ -510,10 +561,15 @@ class _MypageScreenState extends State<MypageScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            const Icon(Icons.bar_chart, color: Color(0xFF7C83FD), size: 18),
-            const SizedBox(width: 8),
-            const Text('내 통계', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+          const Row(children: [
+            Icon(Icons.bar_chart, color: Color(0xFF7C83FD), size: 18),
+            SizedBox(width: 8),
+            // ignore: unnecessary_const
+            const Text('내 통계',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold)),
           ]),
           const SizedBox(height: 16),
           // 평균 평점 + 평가수
@@ -527,15 +583,26 @@ class _MypageScreenState extends State<MypageScreen> {
                 ),
                 child: Column(children: [
                   Text(avg.toStringAsFixed(1),
-                      style: const TextStyle(color: Color(0xFFFFD700), fontSize: 28, fontWeight: FontWeight.bold)),
+                      style: const TextStyle(
+                          color: Color(0xFFFFD700),
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
-                  Row(mainAxisAlignment: MainAxisAlignment.center, children: List.generate(5, (i) {
-                    return Icon(
-                      i < avg.floor() ? Icons.star : (i < avg ? Icons.star_half : Icons.star_border),
-                      color: const Color(0xFFFFD700), size: 14);
-                  })),
+                  Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(5, (i) {
+                        return Icon(
+                            i < avg.floor()
+                                ? Icons.star
+                                : (i < avg
+                                    ? Icons.star_half
+                                    : Icons.star_border),
+                            color: const Color(0xFFFFD700),
+                            size: 14);
+                      })),
                   const SizedBox(height: 4),
-                  Text('평균 평점', style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+                  Text('평균 평점',
+                      style: TextStyle(color: Colors.grey[500], fontSize: 11)),
                 ]),
               ),
             ),
@@ -548,21 +615,31 @@ class _MypageScreenState extends State<MypageScreen> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Column(children: [
-                  Text('$total', style: const TextStyle(color: Color(0xFFF59E0B), fontSize: 28, fontWeight: FontWeight.bold)),
+                  Text('$total',
+                      style: const TextStyle(
+                          color: Color(0xFFF59E0B),
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
-                  const Icon(Icons.movie_outlined, color: Color(0xFFF59E0B), size: 16),
+                  const Icon(Icons.movie_outlined,
+                      color: Color(0xFFF59E0B), size: 16),
                   const SizedBox(height: 4),
-                  Text('평가한 영화', style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+                  Text('평가한 영화',
+                      style: TextStyle(color: Colors.grey[500], fontSize: 11)),
                 ]),
               ),
             ),
           ]),
           if (genres.isNotEmpty) ...[
             const SizedBox(height: 16),
-            const Text('선호 장르', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+            const Text('선호 장르',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600)),
             const SizedBox(height: 10),
             ...genres.take(5).map((g) {
-              final name  = g['genre'] as String;
+              final name = g['genre'] as String;
               final count = g['count'] as int;
               final ratio = count / maxGenre;
               return Padding(
@@ -570,7 +647,8 @@ class _MypageScreenState extends State<MypageScreen> {
                 child: Row(children: [
                   SizedBox(
                     width: 72,
-                    child: Text(name, style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                    child: Text(name,
+                        style: TextStyle(color: Colors.grey[400], fontSize: 12),
                         overflow: TextOverflow.ellipsis),
                   ),
                   const SizedBox(width: 8),
@@ -581,12 +659,14 @@ class _MypageScreenState extends State<MypageScreen> {
                         value: ratio,
                         minHeight: 8,
                         backgroundColor: const Color(0xFF252010),
-                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF7C83FD)),
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                            Color(0xFF7C83FD)),
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Text('${(ratio * 100).round()}%', style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+                  Text('${(ratio * 100).round()}%',
+                      style: TextStyle(color: Colors.grey[500], fontSize: 11)),
                 ]),
               );
             }),
@@ -710,76 +790,77 @@ class _MypageScreenState extends State<MypageScreen> {
           itemBuilder: (_, i) {
             final r = visibleRatings[i];
             return GestureDetector(
-              onTap: () => Navigator.pushNamed(context, '/movie', arguments: r.movie),
-              child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: r.movie.posterUrl.isNotEmpty
-                        ? Image.network(r.movie.posterUrl,
-                            width: 46, height: 68, fit: BoxFit.cover)
-                        : Container(
-                            width: 46,
-                            height: 68,
-                            color: const Color(0xFF252010),
-                            child: const Icon(Icons.movie,
-                                color: Colors.grey, size: 18)),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(r.movie.title,
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w500),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: List.generate(5, (j) {
-                            final full = j < r.score.floor();
-                            final half = !full && j < r.score;
-                            return Icon(
-                              full
-                                  ? Icons.star
-                                  : half
-                                      ? Icons.star_half
-                                      : Icons.star_border,
-                              color: const Color(0xFFFFD700),
-                              size: 14,
-                            );
-                          }),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _formatDate(r.createdAt),
-                          style:
-                              TextStyle(color: Colors.grey[500], fontSize: 11),
-                        ),
-                        if (r.review != null && r.review!.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: Text(r.review!,
-                                style: TextStyle(
-                                    color: Colors.grey[400], fontSize: 12),
+                onTap: () =>
+                    Navigator.pushNamed(context, '/movie', arguments: r.movie),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Row(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: r.movie.posterUrl.isNotEmpty
+                            ? Image.network(r.movie.posterUrl,
+                                width: 46, height: 68, fit: BoxFit.cover)
+                            : Container(
+                                width: 46,
+                                height: 68,
+                                color: const Color(0xFF252010),
+                                child: const Icon(Icons.movie,
+                                    color: Colors.grey, size: 18)),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(r.movie.title,
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w500),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis),
-                          ),
-                      ],
-                    ),
+                            const SizedBox(height: 6),
+                            Row(
+                              children: List.generate(5, (j) {
+                                final full = j < r.score.floor();
+                                final half = !full && j < r.score;
+                                return Icon(
+                                  full
+                                      ? Icons.star
+                                      : half
+                                          ? Icons.star_half
+                                          : Icons.star_border,
+                                  color: const Color(0xFFFFD700),
+                                  size: 14,
+                                );
+                              }),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _formatDate(r.createdAt),
+                              style: TextStyle(
+                                  color: Colors.grey[500], fontSize: 11),
+                            ),
+                            if (r.review != null && r.review!.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text(r.review!,
+                                    style: TextStyle(
+                                        color: Colors.grey[400], fontSize: 12),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis),
+                              ),
+                          ],
+                        ),
+                      ),
+                      Text(r.score.toStringAsFixed(1),
+                          style: const TextStyle(
+                              color: Color(0xFFFFD700),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16)),
+                    ],
                   ),
-                  Text(r.score.toStringAsFixed(1),
-                      style: const TextStyle(
-                          color: Color(0xFFFFD700),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16)),
-                ],
-              ),
-            ));
+                ));
           },
         ),
         if (totalPages > 1) _buildRatingsPagination(totalPages),

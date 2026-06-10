@@ -1,4 +1,5 @@
 import 'package:algomovie/screens/mypage_screen.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'helpers/fake_providers.dart';
@@ -15,15 +16,25 @@ void main() {
         child: MypageScreen(
           initialRatings: mockRatingsNewestFirst(),
           initialWishlist: [mockMovie(title: 'Wish Movie')],
+          initialStats: const {
+            'totalRatings': 2,
+            'avgRatingGiven': 4.5,
+            'genreDistribution': [
+              {'genre': 'Drama', 'count': 2},
+              {'genre': 'Action', 'count': 1},
+            ],
+          },
         ),
         authProvider: auth,
       ),
     );
-    await tester.pumpAndSettle();
+    await pumpAppFrame(tester);
 
     expect(find.text('tester'), findsOneWidget);
     expect(find.text('tester@example.com'), findsOneWidget);
     expect(find.text('T'), findsOneWidget);
+    expect(find.text('4.5'), findsOneWidget);
+    expect(find.text('Drama'), findsOneWidget);
   });
 
   testWidgets(
@@ -36,11 +47,12 @@ void main() {
         child: MypageScreen(
           initialRatings: mockRatingsNewestFirst(),
           initialWishlist: const [],
+          initialStats: const {'totalRatings': 0},
         ),
         authProvider: auth,
       ),
     );
-    await tester.pumpAndSettle();
+    await pumpAppFrame(tester);
 
     expect(find.text('Newest Rated Movie'), findsOneWidget);
     expect(find.text('Older Rated Movie'), findsOneWidget);
@@ -52,15 +64,53 @@ void main() {
     expect(newerTop, lessThan(olderTop));
   });
 
-  testWidgets(
-    'FR-08~FR-09: profile edit and photo change/delete UI exists',
-    (tester) async {},
-    skip: true,
-  );
+  testWidgets('FR-08~FR-09: profile edit and photo change UI exists',
+      (tester) async {
+    final auth = FakeAuthProvider(initialUser: mockUser());
 
-  testWidgets(
-    'FR-17: account withdrawal confirmation popup is shown',
-    (tester) async {},
-    skip: true,
-  );
+    await tester.pumpWidget(
+      testApp(
+        child: const MypageScreen(
+          initialRatings: [],
+          initialWishlist: [],
+          initialStats: {'totalRatings': 0},
+        ),
+        authProvider: auth,
+      ),
+    );
+    await pumpAppFrame(tester);
+
+    await tester.tap(find.byIcon(Icons.camera_alt).first);
+    await pumpAppFrame(tester);
+
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.byType(TextField), findsOneWidget);
+    expect(find.byIcon(Icons.camera_alt), findsWidgets);
+  });
+
+  testWidgets('FR-17: account withdrawal confirmation popup is shown',
+      (tester) async {
+    final auth = FakeAuthProvider(initialUser: mockUser());
+
+    await tester.pumpWidget(
+      testApp(
+        child: const MypageScreen(
+          initialRatings: [],
+          initialWishlist: [],
+          initialStats: {'totalRatings': 0},
+        ),
+        authProvider: auth,
+      ),
+    );
+    await pumpAppFrame(tester);
+
+    await tester.drag(find.byType(ListView), const Offset(0, -900));
+    await pumpAppFrame(tester);
+    final withdrawButton = find.byType(OutlinedButton).first;
+    await tester.tap(withdrawButton);
+    await pumpAppFrame(tester);
+
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.textContaining('?'), findsWidgets);
+  });
 }

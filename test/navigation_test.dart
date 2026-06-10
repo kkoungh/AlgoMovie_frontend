@@ -21,10 +21,10 @@ void main() {
             FakeRecommendationProvider(recommendations: [mockMovie()]),
       ),
     );
-    await tester.pumpAndSettle();
+    await pumpAppFrame(tester);
 
     await tester.tap(find.byIcon(Icons.search).first);
-    await tester.pumpAndSettle();
+    await pumpAppFrame(tester);
     expect(find.text('Search Route'), findsOneWidget);
   });
 

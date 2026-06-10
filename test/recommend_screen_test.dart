@@ -1,4 +1,5 @@
 import 'package:algomovie/screens/home_screen.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'helpers/fake_providers.dart';
@@ -23,7 +24,7 @@ void main() {
             FakeRecommendationProvider(recommendations: recs),
       ),
     );
-    await tester.pumpAndSettle();
+    await pumpAppFrame(tester);
 
     expect(find.text('Score 0.99'), findsWidgets);
     expect(find.text('Score 0.80'), findsOneWidget);
@@ -54,9 +55,38 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    await pumpAppFrame(tester);
 
     expect(find.text('Popular Starter Pick'), findsWidgets);
     expect(find.text('CACHE HIT'), findsNothing);
+  });
+
+  testWidgets('FR-72~FR-74: weekly and monthly popular sort can be selected',
+      (tester) async {
+    final movieProvider = FakeMovieProvider(
+      movies: mockMovies(2),
+      popularMovies: [mockMovie(id: 41, title: 'Weekly Popular')],
+    );
+
+    await tester.pumpWidget(
+      testApp(
+        child: const HomeScreen(),
+        movieProvider: movieProvider,
+        recommendationProvider: FakeRecommendationProvider(
+          recommendations: [mockMovie(title: 'Personal Pick')],
+        ),
+      ),
+    );
+    await pumpAppFrame(tester);
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -500));
+    await pumpAppFrame(tester);
+
+    expect(find.text('Weekly Popular'), findsOneWidget);
+    expect(movieProvider.lastPopularPeriod, 'weekly');
+
+    await tester.tap(find.text('월간'));
+    await pumpAppFrame(tester);
+
+    expect(movieProvider.lastPopularPeriod, 'monthly');
   });
 }

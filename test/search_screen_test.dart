@@ -20,7 +20,7 @@ void main() {
     await tester.pumpWidget(
         testApp(child: const SearchScreen(), movieProvider: movies));
     await tester.enterText(find.byType(EditableText), 'incep');
-    await tester.pumpAndSettle();
+    await pumpAppFrame(tester);
 
     expect(movies.lastSearchQuery, 'incep');
     expect(find.text('Inception'), findsOneWidget);
@@ -35,7 +35,7 @@ void main() {
     await tester.pumpWidget(
         testApp(child: const SearchScreen(), movieProvider: movies));
     await tester.enterText(find.byType(EditableText), 'missing');
-    await tester.pumpAndSettle();
+    await pumpAppFrame(tester);
 
     expect(find.textContaining('"missing"'), findsOneWidget);
   });
@@ -48,11 +48,11 @@ void main() {
     await tester.pumpWidget(
         testApp(child: const SearchScreen(), movieProvider: movies));
     await tester.enterText(find.byType(EditableText), 'Inception');
-    await tester.pumpAndSettle();
+    await pumpAppFrame(tester);
     await tester.ensureVisible(find.byType(MovieCard));
     final cardTopLeft = tester.getTopLeft(find.byType(MovieCard));
     await tester.tapAt(cardTopLeft + const Offset(24, 24));
-    await tester.pumpAndSettle();
+    await pumpAppFrame(tester);
 
     expect(find.text('Christopher Nolan'), findsOneWidget);
   });

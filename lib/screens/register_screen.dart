@@ -1,18 +1,20 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  final List<Map<String, dynamic>>? initialGenres;
+
+  const RegisterScreen({super.key, this.initialGenres});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final _formKey      = GlobalKey<FormState>();
-  final _emailCtrl    = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   final _nicknameCtrl = TextEditingController();
   bool _obscure = true;
@@ -24,14 +26,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void initState() {
     super.initState();
-    _loadGenres();
+    if (widget.initialGenres != null) {
+      _allGenres = widget.initialGenres!;
+    } else {
+      _loadGenres();
+    }
   }
 
   Future<void> _loadGenres() async {
     try {
-      final data = await ApiService().get('/genres', auth: false) as Map<String, dynamic>;
+      final data = await ApiService().get('/genres', auth: false)
+          as Map<String, dynamic>;
       setState(() {
-        _allGenres = (data['genres'] as List<dynamic>).cast<Map<String, dynamic>>();
+        _allGenres =
+            (data['genres'] as List<dynamic>).cast<Map<String, dynamic>>();
       });
     } catch (_) {}
   }
@@ -57,11 +65,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
     setState(() => _loading = true);
     final ok = await context.read<AuthProvider>().register(
-      email:    _emailCtrl.text.trim(),
-      password: _passwordCtrl.text,
-      nickname: _nicknameCtrl.text.trim(),
-      genres:   _selectedGenres.toList(),
-    );
+          email: _emailCtrl.text.trim(),
+          password: _passwordCtrl.text,
+          nickname: _nicknameCtrl.text.trim(),
+          genres: _selectedGenres.toList(),
+        );
     if (mounted) setState(() => _loading = false);
     if (ok && mounted) {
       Navigator.of(context).pushNamedAndRemoveUntil('/home', (_) => false);
