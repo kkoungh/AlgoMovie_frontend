@@ -73,7 +73,8 @@ class _MypageScreenState extends State<MypageScreen> {
     });
   }
 
-  Future<void> _loadStats() async {
+  Future<void> _loadStats({bool showLoading = true}) async {
+    if (showLoading && mounted) setState(() => _statsLoading = true);
     try {
       final data = await _api.get('/mypage/stats') as Map<String, dynamic>;
       if (mounted) {
@@ -103,6 +104,7 @@ class _MypageScreenState extends State<MypageScreen> {
         await Future.wait([
           context.read<AuthProvider>().refreshProfile(),
           _loadRatings(showLoading: false),
+          _loadStats(showLoading: false),
         ]);
       });
     }
@@ -373,6 +375,7 @@ class _MypageScreenState extends State<MypageScreen> {
             context.read<AuthProvider>().refreshProfile(),
             _loadRatings(),
             _loadHistory(),
+            _loadStats(),
           ]);
         },
         child: ListView(

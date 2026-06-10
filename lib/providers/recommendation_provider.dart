@@ -6,6 +6,7 @@ class RecommendationProvider extends ChangeNotifier {
   final _api = ApiService();
 
   List<Movie> _recommendations = [];
+  List<Movie> _sparePool       = [];  // 예비 후보군 (FR-64)
   bool _loading = false;
   String? _error;
   Map<String, dynamic>? _weights;
@@ -28,20 +29,15 @@ class RecommendationProvider extends ChangeNotifier {
     notifyListeners();
     try {
       final data = await _api.get('/recommendations');
-      final list = data['recommendations'] as List<dynamic>? ?? [];
-      _recommendations = list
-          .whereType<Map<String, dynamic>>()
-          .map((m) {
-            try {
-              return Movie.fromJson(m);
-            } catch (e) {
-              debugPrint('Movie.fromJson 실패: $e — $m');
-              return null;
-            }
-          })
-          .whereType<Movie>()
+
+      _recommendations = _parseMovieList(data['recommendations'])
           .where((m) => !_dislikedMovieIds.contains(m.movieId))
           .toList();
+
+      _sparePool = _parseMovieList(data['sparePool'])
+          .where((m) => !_dislikedMovieIds.contains(m.movieId))
+          .toList();
+
       _weights   = data['weights']   as Map<String, dynamic>?;
       _fromCache = data['fromCache'] as bool? ?? false;
       _isNewUser = data['isNewUser'] as bool? ?? false;
@@ -59,16 +55,43 @@ class RecommendationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 불만족해요 클릭 시 해당 영화를 제거하고 예비 후보군에서 즉시 보충 (FR-64)
   void removeRecommendation(int movieId) {
     _dislikedMovieIds.add(movieId);
     _recommendations.removeWhere((m) => m.movieId == movieId);
+
+    while (_sparePool.isNotEmpty) {
+      final next = _sparePool.removeAt(0);
+      if (!_dislikedMovieIds.contains(next.movieId)) {
+        _recommendations.add(next);
+        break;
+      }
+    }
+
     notifyListeners();
   }
 
   void clear() {
     _recommendations = [];
+    _sparePool       = [];
     _weights  = null;
     _fromCache = false;
     notifyListeners();
+  }
+
+  List<Movie> _parseMovieList(dynamic raw) {
+    final list = raw as List<dynamic>? ?? [];
+    return list
+        .whereType<Map<String, dynamic>>()
+        .map((m) {
+          try {
+            return Movie.fromJson(m);
+          } catch (e) {
+            debugPrint('Movie.fromJson 실패: $e — $m');
+            return null;
+          }
+        })
+        .whereType<Movie>()
+        .toList();
   }
 }
