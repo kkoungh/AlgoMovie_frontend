@@ -35,7 +35,7 @@ void main() {
       ),
     );
     await tester.tap(find.text('open'));
-    await tester.pumpAndSettle();
+    await pumpAppFrame(tester);
 
     expect(find.text('Detail Movie'), findsOneWidget);
     expect(find.text('Sci-Fi'), findsOneWidget);
@@ -74,7 +74,7 @@ void main() {
       ),
     );
     await tester.tap(find.text('open'));
-    await tester.pumpAndSettle();
+    await pumpAppFrame(tester);
 
     expect(find.text('Similar Movie'), findsOneWidget);
     expect(find.text('Current Movie'), findsOneWidget);
@@ -84,7 +84,7 @@ void main() {
       scrollable: find.byType(Scrollable).first,
     );
     await tester.tap(find.text('Similar Movie'));
-    await tester.pumpAndSettle();
+    await pumpAppFrame(tester);
 
     expect(find.text('Similar Movie'), findsWidgets);
   });

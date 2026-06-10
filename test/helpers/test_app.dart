@@ -3,7 +3,14 @@ import 'package:algomovie/providers/movie_provider.dart';
 import 'package:algomovie/providers/recommendation_provider.dart';
 import 'package:algomovie/screens/movie_detail_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+
+Future<void> pumpAppFrame(WidgetTester tester) async {
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 100));
+  await tester.pump(const Duration(milliseconds: 300));
+}
 
 Widget testApp({
   required Widget child,

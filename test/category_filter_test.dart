@@ -1,4 +1,4 @@
-import 'package:algomovie/screens/home_screen.dart';
+import 'package:algomovie/screens/category_screen.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'helpers/fake_providers.dart';
@@ -18,24 +18,46 @@ void main() {
 
     await tester.pumpWidget(
       testApp(
-        child: const HomeScreen(),
+        child: const CategoryScreen(),
         movieProvider: movieProvider,
         recommendationProvider: FakeRecommendationProvider(),
       ),
     );
-    await tester.pumpAndSettle();
+    await pumpAppFrame(tester);
 
     await tester.tap(find.text('Drama'));
-    await tester.pumpAndSettle();
+    await pumpAppFrame(tester);
 
-    expect(movieProvider.selectedGenre, 'Drama');
+    expect(movieProvider.lastGenre, 'Drama');
     expect(find.text('Drama Movie'), findsOneWidget);
     expect(find.text('Action Movie'), findsNothing);
   });
 
   testWidgets(
     'FR-78~FR-80: country -> genre -> movie category hierarchy is available',
-    (tester) async {},
-    skip: true,
+    (tester) async {
+      final movieProvider = FakeMovieProvider(
+        genres: const ['전체', 'Action'],
+        movies: [mockMovie(id: 10, title: 'Korean Action', genres: const ['Action'])],
+      );
+
+      await tester.pumpWidget(
+        testApp(
+          child: const CategoryScreen(),
+          movieProvider: movieProvider,
+          recommendationProvider: FakeRecommendationProvider(),
+        ),
+      );
+      await pumpAppFrame(tester);
+
+      await tester.tap(find.text('한국'));
+      await pumpAppFrame(tester);
+      await tester.tap(find.text('Action'));
+      await pumpAppFrame(tester);
+
+      expect(movieProvider.lastCountry, 'KR');
+      expect(movieProvider.lastGenre, 'Action');
+      expect(find.text('Korean Action'), findsOneWidget);
+    },
   );
 }

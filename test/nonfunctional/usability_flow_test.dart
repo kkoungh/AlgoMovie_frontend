@@ -44,7 +44,7 @@ void main() {
     await tester.tap(find.text('Drama'));
     await tester.tap(find.text('Comedy'));
     await tester.tap(find.byType(ElevatedButton));
-    await tester.pumpAndSettle();
+    await pumpAppFrame(tester);
     stopwatch.stop();
 
     expect(auth.registerCalls, 1);
@@ -83,7 +83,7 @@ void main() {
     await tester.tap(find.text('Drama'));
     await tester.tap(find.text('Comedy'));
     await tester.tap(find.byType(ElevatedButton));
-    await tester.pumpAndSettle();
+    await pumpAppFrame(tester);
     stopwatch.stop();
 
     expect(find.text('Fast First Recommendation'), findsWidgets);

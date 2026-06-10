@@ -5,7 +5,9 @@ import '../models/movie.dart';
 import '../providers/movie_provider.dart';
 
 class WishlistScreen extends StatefulWidget {
-  const WishlistScreen({super.key});
+  final List<Map<String, dynamic>>? initialItems;
+
+  const WishlistScreen({super.key, this.initialItems});
 
   @override
   State<WishlistScreen> createState() => _WishlistScreenState();
@@ -22,6 +24,13 @@ class _WishlistScreenState extends State<WishlistScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialItems != null) {
+      _items = List<Map<String, dynamic>>.from(widget.initialItems!);
+      _items.sort((a, b) =>
+          (b['addedAt'] as DateTime).compareTo(a['addedAt'] as DateTime));
+      _loading = false;
+      return;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
   }
 

@@ -47,7 +47,7 @@ void main() {
         find.byType(TextFormField).at(0), 'tester@example.com');
     await tester.enterText(find.byType(TextFormField).at(1), 'password123');
     await tester.tap(find.byType(ElevatedButton));
-    await tester.pumpAndSettle();
+    await pumpAppFrame(tester);
 
     expect(auth.loginCalls, 1);
     expect(find.text('ALGOMOVIE'), findsOneWidget);

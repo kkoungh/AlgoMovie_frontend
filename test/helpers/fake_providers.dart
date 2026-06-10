@@ -1,4 +1,5 @@
 import 'package:algomovie/models/movie.dart';
+import 'package:algomovie/models/rating.dart';
 import 'package:algomovie/models/user.dart';
 import 'package:algomovie/providers/auth_provider.dart';
 import 'package:algomovie/providers/movie_provider.dart';
@@ -101,25 +102,31 @@ class FakeMovieProvider extends MovieProvider {
   FakeMovieProvider({
     List<Movie> movies = const [],
     List<Movie> searchResults = const [],
+    List<Movie> popularMovies = const [],
     List<String> genres = const ['All', 'Action', 'Drama'],
     String selectedGenre = 'All',
     Movie? currentMovie,
     List<Movie> similarMovies = const [],
   })  : _movies = List<Movie>.from(movies),
+        _allMovies = List<Movie>.from(movies),
         _searchResults = List<Movie>.from(searchResults),
+        _popularMovies = List<Movie>.from(popularMovies),
         _genres = List<String>.from(genres),
         _selectedGenre = selectedGenre,
         _currentMovie = currentMovie,
         _similarMovies = List<Movie>.from(similarMovies);
 
   List<Movie> _movies;
+  final List<Movie> _allMovies;
   List<Movie> _searchResults;
+  final List<Movie> _popularMovies;
   final List<String> _genres;
   String _selectedGenre;
   Movie? _currentMovie;
   final List<Movie> _similarMovies;
   bool _loading = false;
   final bool _searchLoading = false;
+  final bool _popularLoading = false;
   String? _error;
   int feedbackCalls = 0;
   int wishlistCalls = 0;
@@ -129,12 +136,18 @@ class FakeMovieProvider extends MovieProvider {
   String? lastSearchQuery;
   double? lastScore;
   String? lastReview;
+  String? lastGenre;
+  String? lastCountry;
+  String lastPopularPeriod = 'weekly';
 
   @override
   List<Movie> get movies => _movies;
 
   @override
   List<Movie> get searchResults => _searchResults;
+
+  @override
+  List<Movie> get popularMovies => _popularMovies;
 
   @override
   List<String> get genres => _genres;
@@ -149,6 +162,12 @@ class FakeMovieProvider extends MovieProvider {
   bool get searchLoading => _searchLoading;
 
   @override
+  bool get popularLoading => _popularLoading;
+
+  @override
+  String get popularPeriod => lastPopularPeriod;
+
+  @override
   String? get error => _error;
 
   @override
@@ -158,8 +177,20 @@ class FakeMovieProvider extends MovieProvider {
   Future<void> loadGenres() async {}
 
   @override
-  Future<void> loadMovies({String? genre}) async {
+  Future<void> loadMovies({String? genre, String? country}) async {
+    lastGenre = genre;
+    lastCountry = country;
+    _movies = genre == null || genre == 'All' || genre == '전체'
+        ? List<Movie>.from(_allMovies)
+        : _allMovies.where((m) => m.genres.contains(genre)).toList();
     _loading = false;
+    notifyListeners();
+  }
+
+  @override
+  Future<void> loadPopularMovies({String period = 'weekly'}) async {
+    lastPopularPeriod = period;
+    notifyListeners();
   }
 
   @override
@@ -205,6 +236,16 @@ class FakeMovieProvider extends MovieProvider {
   @override
   Future<List<Movie>> loadSimilarMovies(int movieId) async {
     return _similarMovies.where((m) => m.movieId != movieId).toList();
+  }
+
+  @override
+  Future<Set<int>> fetchWishlistIds() async {
+    return {};
+  }
+
+  @override
+  Future<List<RatingItem>> fetchMyRatings() async {
+    return [];
   }
 
   @override
