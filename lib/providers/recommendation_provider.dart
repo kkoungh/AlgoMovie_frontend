@@ -77,6 +77,8 @@ class RecommendationProvider extends ChangeNotifier {
     _weights  = null;
     _fromCache = false;
     _isNewUser = false;
+    _votedMovieIds.clear();
+    _dislikedMovieIds.clear();
     notifyListeners();
   }
 
