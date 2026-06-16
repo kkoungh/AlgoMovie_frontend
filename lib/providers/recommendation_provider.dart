@@ -76,6 +76,7 @@ class RecommendationProvider extends ChangeNotifier {
     _sparePool       = [];
     _weights  = null;
     _fromCache = false;
+    _isNewUser = false;
     notifyListeners();
   }
 

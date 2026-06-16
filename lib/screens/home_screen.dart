@@ -30,6 +30,13 @@ class _HomeScreenState extends State<HomeScreen> {
     ]);
   }
 
+  Future<void> _goToMovie(Movie movie) async {
+    await Navigator.pushNamed(context, '/movie', arguments: movie);
+    if (mounted) {
+      context.read<RecommendationProvider>().loadRecommendations();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -112,11 +119,7 @@ class _HomeScreenState extends State<HomeScreen> {
           if (rp.recommendations.isEmpty) return const SizedBox.shrink();
           final hero = rp.recommendations.first;
           return GestureDetector(
-            onTap: () => Navigator.pushNamed(
-              context,
-              '/movie',
-              arguments: hero,
-            ),
+            onTap: () => _goToMovie(hero),
             child: Container(
               margin: const EdgeInsets.all(16),
               height: 220,
@@ -271,11 +274,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       final voted = rp.votedMovieIds.contains(movie.movieId);
                       return MovieCard(
                         movie: movie,
-                        onTap: () => Navigator.pushNamed(
-                          context,
-                          '/movie',
-                          arguments: movie,
-                        ),
+                        onTap: () => _goToMovie(movie),
                         onFeedback: voted ? null : (type) => _onFeedback(movie, type),
                       );
                     },
@@ -333,7 +332,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       padding: const EdgeInsets.only(right: 10),
                       child: MovieCard(
                         movie: movie,
-                        onTap: () => Navigator.pushNamed(context, '/movie', arguments: movie),
+                        onTap: () => _goToMovie(movie),
                       ),
                     );
                   },
