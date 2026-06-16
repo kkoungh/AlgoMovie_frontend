@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/movie_provider.dart';
+import '../providers/recommendation_provider.dart';
 import '../services/api_service.dart';
 import '../models/rating.dart';
 import '../models/movie.dart';
@@ -308,7 +309,13 @@ class _MypageScreenState extends State<MypageScreen> {
         ],
       ),
     );
-    if (ok == true && mounted) await context.read<AuthProvider>().logout();
+    if (ok == true && mounted) {
+      context.read<RecommendationProvider>().clear();
+      await context.read<AuthProvider>().logout();
+      if (mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    }
   }
 
   Future<void> _confirmWithdraw() async {
@@ -337,7 +344,13 @@ class _MypageScreenState extends State<MypageScreen> {
     if (ok == true && mounted) {
       try {
         await _api.delete('/auth/withdraw');
-        if (mounted) await context.read<AuthProvider>().logout();
+        if (mounted) {
+          context.read<RecommendationProvider>().clear();
+          await context.read<AuthProvider>().logout();
+          if (mounted) {
+            Navigator.of(context).popUntil((route) => route.isFirst);
+          }
+        }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

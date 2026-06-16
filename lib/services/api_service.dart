@@ -43,46 +43,103 @@ class ApiService {
     return headers;
   }
 
+  // access token 만료 시 refresh token으로 자동 갱신
+  Future<void> _refreshAccessToken() async {
+    final rt = await _storage.read(key: 'refresh_token');
+    if (rt == null) return;
+    try {
+      final res = await _client
+          .post(
+            Uri.parse('${ApiConstants.baseUrl}/auth/refresh'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'refreshToken': rt}),
+          )
+          .timeout(_timeout);
+      if (res.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+        await _storage.write(key: 'access_token', value: data['accessToken'] as String);
+      }
+    } catch (_) {}
+  }
+
   Future<dynamic> get(String path, {bool auth = true}) async {
-    final res = await _client
+    var res = await _client
         .get(
           Uri.parse('${ApiConstants.baseUrl}$path'),
           headers: await _headers(auth: auth),
         )
         .timeout(_timeout);
+    if (auth && res.statusCode == 401) {
+      await _refreshAccessToken();
+      res = await _client
+          .get(
+            Uri.parse('${ApiConstants.baseUrl}$path'),
+            headers: await _headers(auth: auth),
+          )
+          .timeout(_timeout);
+    }
     return _parse(res);
   }
 
   Future<dynamic> post(String path, Map<String, dynamic> body,
       {bool auth = true}) async {
-    final res = await _client
+    var res = await _client
         .post(
           Uri.parse('${ApiConstants.baseUrl}$path'),
           headers: await _headers(auth: auth),
           body: jsonEncode(body),
         )
         .timeout(_timeout);
+    if (auth && res.statusCode == 401) {
+      await _refreshAccessToken();
+      res = await _client
+          .post(
+            Uri.parse('${ApiConstants.baseUrl}$path'),
+            headers: await _headers(auth: auth),
+            body: jsonEncode(body),
+          )
+          .timeout(_timeout);
+    }
     return _parse(res);
   }
 
   Future<dynamic> patch(String path, Map<String, dynamic> body) async {
-    final res = await _client
+    var res = await _client
         .patch(
           Uri.parse('${ApiConstants.baseUrl}$path'),
           headers: await _headers(),
           body: jsonEncode(body),
         )
         .timeout(_timeout);
+    if (res.statusCode == 401) {
+      await _refreshAccessToken();
+      res = await _client
+          .patch(
+            Uri.parse('${ApiConstants.baseUrl}$path'),
+            headers: await _headers(),
+            body: jsonEncode(body),
+          )
+          .timeout(_timeout);
+    }
     return _parse(res);
   }
 
   Future<dynamic> delete(String path) async {
-    final res = await _client
+    var res = await _client
         .delete(
           Uri.parse('${ApiConstants.baseUrl}$path'),
           headers: await _headers(),
         )
         .timeout(_timeout);
+    if (res.statusCode == 401) {
+      await _refreshAccessToken();
+      res = await _client
+          .delete(
+            Uri.parse('${ApiConstants.baseUrl}$path'),
+            headers: await _headers(),
+          )
+          .timeout(_timeout);
+    }
     if (res.statusCode == 204) return null;
     return _parse(res);
   }
