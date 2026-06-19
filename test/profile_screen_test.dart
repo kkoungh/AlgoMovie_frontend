@@ -104,10 +104,13 @@ void main() {
     );
     await pumpAppFrame(tester);
 
-    await tester.drag(find.byType(ListView), const Offset(0, -900));
-    await pumpAppFrame(tester);
-    final withdrawButton = find.byType(OutlinedButton).first;
-    await tester.tap(withdrawButton);
+    await tester.scrollUntilVisible(
+      find.text('회원탈퇴'),
+      200.0,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('회원탈퇴'));
     await pumpAppFrame(tester);
 
     expect(find.byType(AlertDialog), findsOneWidget);

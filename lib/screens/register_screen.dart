@@ -72,7 +72,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
     if (mounted) setState(() => _loading = false);
     if (ok && mounted) {
-      Navigator.of(context).pushNamedAndRemoveUntil('/home', (_) => false);
+      Navigator.of(context).popUntil((route) => route.isFirst);
     } else if (!ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

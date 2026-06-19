@@ -22,6 +22,7 @@ class RecommendationProvider extends ChangeNotifier {
   bool                  get fromCache       => _fromCache;
   bool                  get isNewUser       => _isNewUser;
   Set<int>              get votedMovieIds   => _votedMovieIds;
+  bool                  get isSpareEmpty    => _sparePool.isEmpty;
 
   Future<void> loadRecommendations() async {
     _loading = true;

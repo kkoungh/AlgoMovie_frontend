@@ -291,18 +291,18 @@ class _MypageScreenState extends State<MypageScreen> {
   Future<void> _confirmLogout() async {
     final ok = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1A1608),
         title: const Text('로그아웃', style: TextStyle(color: Colors.white)),
         content:
             Text('로그아웃 하시겠습니까?', style: TextStyle(color: Colors.grey[400])),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.pop(ctx, false),
             child: Text('취소', style: TextStyle(color: Colors.grey[400])),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(ctx, true),
             child:
                 const Text('로그아웃', style: TextStyle(color: Color(0xFFF59E0B))),
           ),
@@ -313,7 +313,8 @@ class _MypageScreenState extends State<MypageScreen> {
       context.read<RecommendationProvider>().clear();
       await context.read<AuthProvider>().logout();
       if (mounted) {
-        Navigator.of(context).popUntil((route) => route.isFirst);
+        Navigator.of(context, rootNavigator: true)
+            .popUntil((route) => route.isFirst);
       }
     }
   }
@@ -321,7 +322,7 @@ class _MypageScreenState extends State<MypageScreen> {
   Future<void> _confirmWithdraw() async {
     final ok = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1A1608),
         title: const Text('회원탈퇴', style: TextStyle(color: Color(0xFFF59E0B))),
         content: Text(
@@ -330,11 +331,11 @@ class _MypageScreenState extends State<MypageScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.pop(ctx, false),
             child: Text('취소', style: TextStyle(color: Colors.grey[400])),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(ctx, true),
             child:
                 const Text('탈퇴하기', style: TextStyle(color: Color(0xFFF59E0B))),
           ),
@@ -348,7 +349,8 @@ class _MypageScreenState extends State<MypageScreen> {
           context.read<RecommendationProvider>().clear();
           await context.read<AuthProvider>().logout();
           if (mounted) {
-            Navigator.of(context).popUntil((route) => route.isFirst);
+            Navigator.of(context, rootNavigator: true)
+                .popUntil((route) => route.isFirst);
           }
         }
       } catch (e) {

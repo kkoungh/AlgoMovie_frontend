@@ -365,10 +365,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _onFeedback(Movie movie, String type) async {
+    final rp = context.read<RecommendationProvider>();
+
     if (type == 'LIKE') {
-      context.read<RecommendationProvider>().markVoted(movie.movieId);
+      rp.markVoted(movie.movieId);
     } else {
-      context.read<RecommendationProvider>().removeRecommendation(movie.movieId);
+      rp.removeRecommendation(movie.movieId);
+      if (rp.isSpareEmpty) {
+        rp.loadRecommendations();
+      }
     }
 
     final ok = await context.read<MovieProvider>().submitFeedback(movie.movieId, type);
